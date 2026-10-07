@@ -9,6 +9,7 @@ public final class DesktopLauncher {
         Lwjgl3ApplicationConfiguration config = new Lwjgl3ApplicationConfiguration();
         config.setTitle("Frontier");
         config.setWindowedMode(1200, 800);
+        config.setResizable(true);
         config.setWindowSizeLimits(960, 640, -1, -1);
         config.useVsync(true);
         config.setForegroundFPS(60);

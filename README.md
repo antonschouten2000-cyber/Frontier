@@ -10,7 +10,7 @@ Installeer een **JDK 21** en zorg dat `JAVA_HOME` daarnaar verwijst. De Gradle W
 ./gradlew :lwjgl3:run
 ```
 
-Op Windows: `gradlew.bat :lwjgl3:run`. Voor macOS voegt de run-task automatisch `-XstartOnFirstThread` toe. Een grafische desktop met OpenGL is nodig; dit is geen browsergame.
+Op Windows: `gradlew.bat :lwjgl3:run`. Voor macOS voegt de run-task automatisch `-XstartOnFirstThread` toe. Het venster is maximaliseerbaar. Op grotere schermen groeien de kaart, zijbalk en statuspanelen mee met de beschikbare ruimte. Een grafische desktop met OpenGL is nodig; dit is geen browsergame.
 
 ## Spelen
 
@@ -18,7 +18,7 @@ Je begint als **Reiziger** in **Red Creek** met $20, 100 energie, niveau 1 en 0 
 
 - Klik op een locatie om die te bekijken. Dit kost geen tijd of energie. Kies **Reizen naar deze locatie** om een reis te bevestigen, of klik op een van de werkzaamheden.
 - Houd de linkermuisknop ingedrukt en sleep om de grotere kaart te verplaatsen. Een sleepbeweging selecteert geen locatie en kost geen tijd of energie. **Kaart centreren** herstelt het overzicht.
-- De wereldkaart bevat 1600 × 960 pixels terrein op oorspronkelijke schaal. Rond de bestaande streek liggen de spookdorpen **Droge Bron**, **Zandvallei** en **Verloren Kreek**, plus **Fort Zandsteen**. Klik erop voor informatie. Aankopen is gereserveerd voor een volgende versie; de prijs is nog te bepalen. Deze plekken zijn nog geen reis- of werklocaties.
+- De wereldkaart bevat 1600 × 960 pixels terrein, weergegeven op 75% schaal zodat je meer van de wereld tegelijk ziet. Locatieknoppen en tekst blijven op hun leesbare formaat. Rond de bestaande streek liggen de spookdorpen **Droge Bron**, **Zandvallei** en **Verloren Kreek**, plus **Fort Zandsteen**. Klik erop voor informatie. Aankopen is gereserveerd voor een volgende versie; de prijs is nog te bepalen. Deze plekken zijn nog geen reis- of werklocaties.
 - De werkknoppen tonen alleen de naam. Het detailmenu toont de opbrengst, ervaring, energie, werkduur en reistijd erheen. **Aan het werk** start een lokale klus; **Reizen en werken** voert de reis en klus samen uit. **Terug** annuleert zonder kosten.
 - Elke afgeronde klus geeft geld en ervaring, met een kleine variatie in betaling.
 - Als je te moe bent, reis terug naar Red Creek. Open daar **Stad openen**, kies **Herberg** en klik op **Acht uur slapen**: gratis, +8 uur en energie naar 100.
@@ -74,7 +74,7 @@ De uitvoerbare distributie staat in `lwjgl3/build/install/lwjgl3/`. Start `bin/l
 ./gradlew :lwjgl3:desktopSmoke
 ```
 
-Deze test gebruikt een tijdelijke save en verandert jouw eigen save niet. Hij controleert de grotere versleepbare kaart op oorspronkelijke schaal, de vier toekomstige aankoopplekken, statusbalken, stadsgebouwen, herberg, instellingen, alle achttien werkzaamheden, detailmenu’s, annuleren, uitputting, terugreis, slapen, vondsten, inventarisfilters, opslaan/laden, Nieuw spel, venstergrootte en Afsluiten. Screenshots staan na de test in `build/frontier-desktop.png` en `build/frontier-desktop-small.png`, `build/frontier-work.png`, `build/frontier-inventory.png` en `build/frontier-town.png`. Zonder desktop kan hij met Xvfb worden uitgevoerd, bijvoorbeeld `xvfb-run -a ./gradlew :lwjgl3:desktopSmoke`.
+Deze test gebruikt een tijdelijke save en verandert jouw eigen save niet. Hij controleert de uitgezoomde versleepbare kaart, de vier toekomstige aankoopplekken, statusbalken, stadsgebouwen, herberg, instellingen, alle achttien werkzaamheden, detailmenu’s, annuleren, uitputting, terugreis, slapen, vondsten, inventarisfilters, opslaan/laden, Nieuw spel, kleine en grote venstergroottes, meegroeiende kaartpanelen en Afsluiten. Screenshots staan na de test in `build/frontier-desktop.png` en `build/frontier-desktop-small.png`, `build/frontier-work.png`, `build/frontier-inventory.png` en `build/frontier-town.png`. Zonder desktop kan hij met Xvfb worden uitgevoerd, bijvoorbeeld `xvfb-run -a ./gradlew :lwjgl3:desktopSmoke`.
 
 ## Architectuur
 

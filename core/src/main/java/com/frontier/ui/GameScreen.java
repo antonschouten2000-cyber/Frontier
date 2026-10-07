@@ -4,7 +4,7 @@ import com.badlogic.gdx.*;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.badlogic.gdx.utils.ScreenUtils;
-import com.badlogic.gdx.utils.viewport.FitViewport;
+import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.frontier.logic.GameSession;
 import com.frontier.model.*;
 import com.frontier.save.SaveManager;
@@ -14,11 +14,11 @@ public final class GameScreen extends ScreenAdapter {
     private final GameSession game;
     private final SaveManager saves;
     private final Skin skin = FrontierSkin.create();
-    private final Stage stage = new Stage(new FitViewport(1200, 800));
+    private final Stage stage = new Stage(new ScreenViewport());
     private final ActionBar actionBar = new ActionBar(skin);
     private final Label locationTitle = label("", "accent"), locationInfo = label("", "muted");
     private final Label status = label("Welkom in Red Creek. Twintig dollar en een nieuw begin. Kies een locatie of zoek een klus.", "default");
-        private final Table jobs = new Table();
+    private final Table jobs = new Table();
     private final TextButton travel, town, inventory;
     private final MapPanel map;
     private Location selected = Location.RED_CREEK;
@@ -39,22 +39,22 @@ public final class GameScreen extends ScreenAdapter {
         root.add(actionBar).growX().padBottom(14).row();
         Table content = new Table(), territory = new Table();
         territory.add(label("HET GEBIED ROND RED CREEK", "accent")).left().growX().padBottom(10).row();
-        territory.add(map).width(800).height(380).row();
+        territory.add(map).minSize(0, 0).prefSize(800, 380).grow().row();
         Table mapTools = new Table();
         mapTools.add(label("Sleep de kaart met de linkermuisknop.", "muted")).left().expandX();
         mapTools.add(button("Kaart centreren", "map-center", map::center)).width(180).height(34);
         territory.add(mapTools).growX().padTop(10);
-        content.add(territory).width(800).top();
+        content.add(territory).minWidth(0).grow();
         Table activities = new Table(); activities.setBackground(skin.getDrawable("card")); activities.pad(16);
         activities.add(locationTitle).left().growX().padBottom(10).row();
         activities.add(locationInfo).width(254).height(64).left().padBottom(8).row();
         activities.add(travel).growX().height(40).padBottom(16).row();
         ScrollPane jobList = new ScrollPane(jobs, skin); jobList.setFadeScrollBars(false);
         jobList.setScrollingDisabled(true, false); jobList.setName("job-list");
-        activities.add(jobList).width(254).height(200).padBottom(12).row();
+        activities.add(jobList).width(254).minHeight(100).prefHeight(200).growY().padBottom(12).row();
         activities.add(town).growX().height(42).row();
-        content.add(activities).width(290).padLeft(18).top();
-        root.add(content).growX().padBottom(16).row();
+        content.add(activities).width(290).padLeft(18).growY();
+        root.add(content).grow().padBottom(16).row();
         Table journal = new Table(); journal.setBackground(skin.getDrawable("card")); journal.pad(12);
         journal.add(status).growX().height(48).left(); root.add(journal).growX().padBottom(16).row();
         Table menu = new Table(); menu.defaults().height(44).padRight(8);
@@ -133,7 +133,17 @@ public final class GameScreen extends ScreenAdapter {
     }
     @Override public void show() { Gdx.input.setInputProcessor(stage); }
     @Override public void render(float delta) { ScreenUtils.clear(.10f, .07f, .04f, 1); stage.act(Math.min(delta, 1 / 30f)); stage.draw(); }
-    @Override public void resize(int width, int height) { stage.getViewport().update(width, height, true); }
+    @Override public void resize(int width, int height) {
+        if (width <= 0 || height <= 0) return;
+        ScreenViewport viewport = (ScreenViewport) stage.getViewport();
+        // Houd kleine vensters bruikbaar; grotere vensters krijgen meer ruimte.
+        viewport.setUnitsPerPixel(Math.max(1f, Math.max(1200f / width, 800f / height)));
+        viewport.update(width, height, true);
+        for (var actor : stage.getRoot().getChildren()) {
+            if (actor instanceof Dialog dialog) dialog.setPosition(
+                (stage.getWidth() - dialog.getWidth()) / 2, (stage.getHeight() - dialog.getHeight()) / 2);
+        }
+    }
     @Override public void hide() { if (Gdx.input.getInputProcessor() == stage) Gdx.input.setInputProcessor(null); }
     @Override public void dispose() { stage.dispose(); map.dispose(); skin.dispose(); }
 }

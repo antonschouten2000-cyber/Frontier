@@ -33,8 +33,8 @@ public final class DesktopSmoke extends Game {
         try {
             new Lwjgl3Application(app, config);
             if (app.failure != null) throw new AssertionError("Desktopcontrole mislukt", app.failure);
-            check(app.frame >= 14, "Alle stappen moeten zijn uitgevoerd.");
-            System.out.println("DESKTOP SMOKE PASSED: glad lettertype, grotere kaart op oorspronkelijke schaal, vier toekomstige bezittingen, kaart slepen, statusbalken, stadsgebouwen, herberg, achttien klussen, inventaris, instellingen, opslag, formaat en afsluiten.");
+            check(app.frame >= 20, "Alle stappen moeten zijn uitgevoerd.");
+            System.out.println("DESKTOP SMOKE PASSED: glad lettertype, uitgezoomde kaart en meegroeiende interface, vier toekomstige bezittingen, kaart slepen, statusbalken, stadsgebouwen, herberg, achttien klussen, inventaris, instellingen, opslag, formaat en afsluiten.");
         } finally { Files.deleteIfExists(directory.resolve("save.json")); Files.deleteIfExists(directory); }
     }
     @Override public void create() { setScreen(new GameScreen(session, saves)); }
@@ -133,7 +133,16 @@ public final class DesktopSmoke extends Game {
             else if (frame == 12) {
                 click("job-branches"); click("work-confirm");
                 check(session.state().location() == Location.PINE_FOREST, "Menu werkt ook na verkleinen.");
-            } else if (frame == 14) { capture("build/frontier-desktop-small.png"); click("settings"); click("quit"); }
+            } else if (frame == 14) { capture("build/frontier-desktop-small.png"); Gdx.graphics.setWindowedMode(1920, 1080); }
+            else if (frame == 17) {
+                ScrollPane map = stage().getRoot().findActor("world-map");
+                check(stage().getWidth() >= 1920 && stage().getHeight() >= 1080, "De interface gebruikt de grotere vensterruimte.");
+                check(map.getWidth() > 1400 && map.getHeight() > 600, "Het kaartpaneel groeit in beide richtingen.");
+                Image background = (Image) ((Group) map.getActor()).getChildren().first();
+                check(background.getWidth() == WorldMap.WIDTH * .75f, "Een groter venster zoomt het terrein niet opnieuw in.");
+                click("map-center"); goHomeAndRest(); click("town");
+                capture("build/frontier-desktop-large-town.png"); click("town-close");
+            } else if (frame == 20) { capture("build/frontier-desktop-large.png"); click("settings"); click("quit"); }
         } catch (Throwable e) { failure = e; capture("build/frontier-failure.png"); Gdx.app.exit(); }
     }
     private Stage stage() { return (Stage) Gdx.input.getInputProcessor(); }
@@ -174,8 +183,8 @@ public final class DesktopSmoke extends Game {
     private void verifyLandmarks() {
         ScrollPane map = stage().getRoot().findActor("world-map");
         Image background = (Image) ((Group) map.getActor()).getChildren().first();
-        check(background.getWidth() == WorldMap.WIDTH && background.getHeight() == WorldMap.HEIGHT,
-            "De kaart toont de volledige nieuwe wereld op oorspronkelijke schaal.");
+        check(background.getWidth() == WorldMap.WIDTH * .75f && background.getHeight() == WorldMap.HEIGHT * .75f,
+            "De kaart toont dezelfde volledige wereld met 25 procent kleinere terreindetails.");
         var time = session.state().time().value();
         int cash = session.state().player().money(), energy = session.state().player().stamina();
         for (Landmark site : Landmark.values()) {

@@ -28,7 +28,8 @@ final class MapPanel extends ScrollPane {
     void dispose() { canvas.artwork.dispose(); }
 
     private static final class MapCanvas extends WidgetGroup {
-        private static final float WIDTH = WorldMap.WIDTH, HEIGHT = WorldMap.HEIGHT;
+        private static final float SCALE = .75f;
+        private static final float WIDTH = WorldMap.WIDTH * SCALE, HEIGHT = WorldMap.HEIGHT * SCALE;
         private final Texture artwork = WorldArtwork.create();
         private final Image background = new Image(artwork);
         private final EnumMap<Landmark, TextButton> landmarks = new EnumMap<>(Landmark.class);
@@ -48,10 +49,11 @@ final class MapPanel extends ScrollPane {
         @Override public float getPrefWidth() { return WIDTH; }
         @Override public float getPrefHeight() { return HEIGHT; }
         @Override public void layout() {
-            background.setBounds(0, 0, getWidth(), getHeight());
+            float offsetX = (getWidth() - WIDTH) / 2, offsetY = (getHeight() - HEIGHT) / 2;
+            background.setBounds(offsetX, offsetY, WIDTH, HEIGHT);
             markers.forEach((location, marker) -> marker.setBounds(
-                WorldMap.x(location) - 88, WorldMap.y(location) - 26, 176, 52));
-            landmarks.forEach((site, marker) -> marker.setBounds(site.x() - 105, site.y() - 28, 210, 56));
+                offsetX + WorldMap.x(location) * SCALE - 88, offsetY + WorldMap.y(location) * SCALE - 26, 176, 52));
+            landmarks.forEach((site, marker) -> marker.setBounds(offsetX + site.x() * SCALE - 105, offsetY + site.y() * SCALE - 28, 210, 56));
         }
         void refresh(GameSession game, Location selected) {
             markers.forEach((location, marker) -> {
