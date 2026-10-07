@@ -1,0 +1,10 @@
+allprojects {
+    repositories { mavenCentral() }
+}
+ext.gdxVersion = '1.13.1'
+subprojects {
+    apply plugin: 'java'
+    java { toolchain { languageVersion = JavaLanguageVersion.of(21) } }
+    tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8' }
+    tasks.withType(Test).configureEach { useJUnitPlatform() }
+}

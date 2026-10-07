@@ -1,0 +1,2 @@
+rootProject.name = 'Frontier'
+include 'core', 'lwjgl3'

@@ -1,0 +1,58 @@
+package com.frontier.ui;
+
+import com.badlogic.gdx.scenes.scene2d.ui.*;
+import com.frontier.model.*;
+
+final class InventoryDialog extends Dialog {
+    private final Skin skin;
+    private final Inventory inventory;
+    private final Table items = new Table();
+    private final Label description;
+    private final java.util.Map<Item.Category, TextButton> filters = new java.util.EnumMap<>(Item.Category.class);
+    private final TextButton all;
+    InventoryDialog(Skin skin, Inventory inventory) {
+        super("Inventaris", skin);
+        this.skin = skin; this.inventory = inventory;
+        description = new Label("Klik op een voorwerp voor de beschrijving.", skin, "muted"); description.setWrap(true);
+        getContentTable().pad(20);
+        getContentTable().add(new Label("Je draagt " + inventory.totalCount() + " voorwerpen bij je.", skin, "accent")).left().row();
+        Table tabs = new Table(); tabs.defaults().width(138).height(40).padRight(6);
+        all = Ui.button(skin, "Alles", "inventory-all", () -> refresh(null)); tabs.add(all);
+        for (Item.Category category : Item.Category.values()) {
+            TextButton tab = Ui.button(skin, category.displayName(), "inventory-" + category.name(), () -> refresh(category));
+            filters.put(category, tab); tabs.add(tab);
+        }
+        getContentTable().add(tabs).padTop(18).padBottom(14).row();
+        ScrollPane scroll = new ScrollPane(items, skin);
+        scroll.setFadeScrollBars(false); scroll.setScrollingDisabled(true, false);
+        getContentTable().add(scroll).width(580).height(260).row();
+        getContentTable().add(description).width(580).height(55).padTop(12).row();
+        button("Sluiten"); Ui.nameDialogButtons(this, "inventory-close");
+        getButtonTable().pad(14);
+        refresh(null);
+    }
+    private void refresh(Item.Category category) {
+        items.clearChildren(); items.top();
+        all.setDisabled(category == null);
+        filters.forEach((key, tab) -> tab.setDisabled(key == category));
+        boolean any = false;
+        for (Item item : Item.values()) {
+            int quantity = inventory.count(item);
+            if (quantity == 0 || category != null && item.category() != category) continue;
+            any = true;
+            Table row = new Table(); row.setBackground(skin.getDrawable("card")); row.pad(8);
+            TextButton name = Ui.button(skin, item.displayName(), "item-" + item.name(), () -> description.setText(item.description()));
+            row.add(name).width(265).height(40).left();
+            row.add(new Label(item.category().displayName(), skin, "muted")).expandX().center();
+            row.add(new Label("x " + quantity, skin, "accent")).width(58).right();
+            items.add(row).width(555).padBottom(7).row();
+        }
+        if (!any) {
+            Label empty = new Label(inventory.totalCount() == 0
+                ? "Je inventaris is leeg. Tijdens werk kun je voorwerpen vinden."
+                : "In deze categorie heb je nog geen voorwerpen.", skin, "muted");
+            empty.setWrap(true); items.add(empty).width(535).pad(18);
+        }
+        description.setText("Klik op een voorwerp voor de beschrijving.");
+    }
+}

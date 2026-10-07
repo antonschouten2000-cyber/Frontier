@@ -1,0 +1,39 @@
+plugins { id 'application' }
+application { mainClass = 'com.frontier.lwjgl3.DesktopLauncher' }
+dependencies {
+    implementation project(':core')
+    implementation "com.badlogicgames.gdx:gdx-backend-lwjgl3:$gdxVersion"
+    implementation "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
+}
+run {
+    workingDir = rootProject.projectDir
+    if (project.hasProperty('saveDir')) {
+        systemProperty 'frontier.saveDir', project.property('saveDir')
+    }
+    if (System.getProperty('os.name').toLowerCase().contains('mac')) {
+        jvmArgs '-XstartOnFirstThread'
+    }
+}
+
+sourceSets {
+    smoke {
+        java.srcDir 'src/smoke/java'
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.main.output
+    }
+}
+configurations {
+    smokeImplementation.extendsFrom implementation
+    smokeRuntimeOnly.extendsFrom runtimeOnly
+}
+
+// Runs a real LWJGL3 window and clicks Scene2D controls; requires a display (or Xvfb).
+tasks.register('desktopSmoke', JavaExec) {
+    dependsOn smokeClasses
+    classpath = sourceSets.smoke.runtimeClasspath
+    mainClass = 'com.frontier.lwjgl3.DesktopSmoke'
+    workingDir = rootProject.projectDir
+    if (System.getProperty('os.name').toLowerCase().contains('mac')) {
+        jvmArgs '-XstartOnFirstThread'
+    }
+}
