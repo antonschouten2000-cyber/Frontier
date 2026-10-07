@@ -9,15 +9,18 @@ import java.util.random.RandomGenerator;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ExpandedGameplayTest {
-    @Test void twelveDistinctJobsHaveRequestedFirstJobs() {
+    @Test void eighteenDistinctJobsAreOutsideTown() {
         GameSession game = new GameSession(); Set<String> ids = new HashSet<>();
         for (Location location : Location.values()) {
-            assertEquals(3, game.jobsAt(location).size());
+            assertEquals(location == Location.RED_CREEK ? 0 : 6, game.jobsAt(location).size());
             for (Job job : game.jobsAt(location)) {
                 assertEquals(location, job.location()); assertTrue(ids.add(job.id()));
             }
         }
-        assertEquals(12, ids.size()); assertEquals("Wagens laden", game.currentJob().name());
+        assertEquals(18, ids.size()); assertNull(game.currentJob());
+        assertFalse(game.workBlockReason().isEmpty()); game.work();
+        assertEquals(20, game.state().player().money()); assertEquals(100, game.state().player().stamina());
+        assertEquals(GameTime.START, game.state().time().value());
     }
     @ParameterizedTest @EnumSource(Location.class) void everyJobCanTravelWorkAndReturn(Location target) {
         GameSession game = new GameSession(new Random(1));
@@ -74,7 +77,7 @@ class ExpandedGameplayTest {
     }
     @Test void successfulJobsAddAndStackLootAndNewGameClearsIt() {
         GameSession game = new GameSession(new Rolls(0, 0, 0, 0));
-        game.work(); game.work(); assertEquals(2, game.state().inventory().count(Item.COFFEE));
+        game.travel(Location.PINE_FOREST); game.work(); game.work(); assertEquals(2, game.state().inventory().count(Item.WOOD));
         game.newGame(); assertEquals(0, game.state().inventory().totalCount());
     }
     @Test void rejectedJobDoesNotRollLoot() {

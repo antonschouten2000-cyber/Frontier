@@ -16,7 +16,7 @@ public final class GameSession {
     }
     public GameState state() { return state; }
     public List<Job> jobsAt(Location location) { return jobs.at(location); }
-    public Job currentJob() { return jobsAt(state.location()).getFirst(); }
+    public Job currentJob() { return jobsAt(state.location()).isEmpty() ? null : jobsAt(state.location()).getFirst(); }
     public void newGame() { state = new GameState(); }
     public void load(GameState saved) { state = Objects.requireNonNull(saved); }
     public String travelBlockReason(Location target) {

@@ -18,7 +18,7 @@ class GameSessionTest {
             () -> assertEquals(Location.RED_CREEK, s.location()),
             () -> assertEquals(LocalDateTime.of(1880, 4, 1, 8, 0), s.time().value()));
     }
-    @ParameterizedTest @EnumSource(Location.class) void everyJobPaysAndAdvancesOnlyActionTime(Location location) {
+    @ParameterizedTest @EnumSource(value = Location.class, names = "RED_CREEK", mode = EnumSource.Mode.EXCLUDE) void everyJobPaysAndAdvancesOnlyActionTime(Location location) {
         GameSession game = session(); game.travel(location);
         Player p = game.state().player();
         Job job = game.currentJob();
@@ -54,7 +54,7 @@ class GameSessionTest {
         assertEquals(Location.RED_CREEK, game.state().location());
         assertEquals(GameTime.START, game.state().time().value());
     }
-    @ParameterizedTest @EnumSource(Location.class) void exhaustingWorkNeverStrandsPlayer(Location location) {
+    @ParameterizedTest @EnumSource(value = Location.class, names = "RED_CREEK", mode = EnumSource.Mode.EXCLUDE) void exhaustingWorkNeverStrandsPlayer(Location location) {
         GameSession game = session(); game.travel(location);
         int actions = 0;
         while (game.workBlockReason().isEmpty()) {
@@ -103,7 +103,7 @@ class GameSessionTest {
         assertTrue(payments.size() > 1);
     }
     @Test void newGameResetsAllState() {
-        GameSession game = session(); game.work(); game.travel(Location.LONELY_RANCH); game.newGame();
+        GameSession game = session(); game.travel(Location.PINE_FOREST); game.work(); game.newGame();
         assertEquals(20, game.state().player().money()); assertEquals(100, game.state().player().stamina());
         assertEquals(0, game.state().player().xp()); assertEquals(1, game.state().player().level());
         assertEquals(Location.RED_CREEK, game.state().location()); assertEquals(GameTime.START, game.state().time().value());

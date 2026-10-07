@@ -3,7 +3,6 @@ package com.frontier.ui;
 import com.badlogic.gdx.*;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
-import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.frontier.logic.GameSession;
@@ -16,57 +15,52 @@ public final class GameScreen extends ScreenAdapter {
     private final SaveManager saves;
     private final Skin skin = FrontierSkin.create();
     private final Stage stage = new Stage(new FitViewport(1200, 800));
-    private final Label playerHud = label("", "default"), timeHud = label("", "accent");
+    private final ActionBar actionBar = new ActionBar(skin);
     private final Label locationTitle = label("", "accent"), locationInfo = label("", "muted");
     private final Label status = label("Welkom in Red Creek. Twintig dollar en een nieuw begin. Kies een locatie of zoek een klus.", "default");
-    private final Label energyText = label("", "default");
-    private final ProgressBar energy = new ProgressBar(0, 100, 1, false, skin);
-    private final Table jobs = new Table();
-    private final TextButton travel, sleep, inventory;
+        private final Table jobs = new Table();
+    private final TextButton travel, town, inventory;
     private final MapPanel map;
     private Location selected = Location.RED_CREEK;
 
     public GameScreen(GameSession game, SaveManager saves) {
         this.game = game; this.saves = saves;
         travel = button("Reizen", "travel", this::confirmTravel);
-        sleep = button("Slapen in de herberg", "sleep", () -> message(game.sleep()));
+        town = button("Stad openen", "town", () -> new TownDialog(skin, game, this::message).show(stage));
         inventory = button("Inventaris", "inventory", () -> new InventoryDialog(skin, game.state().inventory()).show(stage));
         map = new MapPanel(skin, location -> { selected = location; refresh(); });
         status.setWrap(true); locationInfo.setWrap(true);
-        playerHud.setName("player-hud"); timeHud.setName("time-hud"); status.setName("status");
+        status.setName("status");
         Table root = new Table(); root.setFillParent(true); root.pad(20); root.setBackground(skin.getDrawable("wood")); stage.addActor(root);
         Table heading = new Table(); heading.add(label("FRONTIER", "title")).left().expandX();
         heading.add(label("EEN LEVEN AAN DE GRENS  /  1880", "muted")).right();
         root.add(heading).growX().padBottom(16).row();
-        Table hud = new Table(); hud.setBackground(skin.getDrawable("card")); hud.pad(16);
-        hud.add(playerHud).left().expandX(); hud.add(timeHud).right();
-        root.add(hud).growX().padBottom(16).row();
+        root.add(actionBar).growX().padBottom(14).row();
         Table content = new Table(), territory = new Table();
         territory.add(label("HET GEBIED ROND RED CREEK", "accent")).left().growX().padBottom(10).row();
-        territory.add(map).width(800).height(400).row();
-        territory.add(label("Kies een locatie. Klik op een werkzaamheid voor opbrengst en kosten.", "muted")).left().padTop(12);
+        territory.add(map).width(800).height(380).row();
+        Table mapTools = new Table();
+        mapTools.add(label("Sleep de kaart met de linkermuisknop.", "muted")).left().expandX();
+        mapTools.add(button("Kaart centreren", "map-center", map::center)).width(180).height(34);
+        territory.add(mapTools).growX().padTop(10);
         content.add(territory).width(800).top();
         Table activities = new Table(); activities.setBackground(skin.getDrawable("card")); activities.pad(16);
         activities.add(locationTitle).left().growX().padBottom(10).row();
-        activities.add(locationInfo).width(254).height(48).left().padBottom(8).row();
+        activities.add(locationInfo).width(254).height(64).left().padBottom(8).row();
         activities.add(travel).growX().height(40).padBottom(16).row();
-        activities.add(label("WERKZAAMHEDEN", "accent")).left().growX().padBottom(10).row();
-        activities.add(jobs).growX().padBottom(14).row();
-        activities.add(energyText).left().growX().padBottom(8).row();
-        activities.add(energy).growX().height(10).padBottom(14).row();
-        activities.add(sleep).growX().height(40).padBottom(8).row();
-        activities.add(label("Red Creek / gratis / acht uur rust", "muted")).left();
+        ScrollPane jobList = new ScrollPane(jobs, skin); jobList.setFadeScrollBars(false);
+        jobList.setScrollingDisabled(true, false); jobList.setName("job-list");
+        activities.add(jobList).width(254).height(200).padBottom(12).row();
+        activities.add(town).growX().height(42).row();
         content.add(activities).width(290).padLeft(18).top();
         root.add(content).growX().padBottom(16).row();
         Table journal = new Table(); journal.setBackground(skin.getDrawable("card")); journal.pad(12);
         journal.add(status).growX().height(48).left(); root.add(journal).growX().padBottom(16).row();
         Table menu = new Table(); menu.defaults().height(44).padRight(8);
-        menu.add(button("Nieuw spel", "new-game", this::confirmNewGame)).width(140);
-        menu.add(button("Spel opslaan", "save-game", this::save)).width(150);
-        menu.add(button("Spel laden", "load-game", this::load)).width(140);
-        menu.add(inventory).width(185);
+        menu.add(inventory).width(200);
         menu.add(label("De klok wacht op jou.", "muted")).expandX();
-        menu.add(button("Afsluiten", "quit", () -> Gdx.app.exit())).width(125).padRight(0);
+        menu.add(button("Instellingen", "settings", () ->
+            new SettingsDialog(skin, this::confirmNewGame, this::save, this::load).show(stage))).width(175).padRight(0);
         root.add(menu).growX(); refresh();
     }
     private Label label(String text, String style) { return new Label(text, skin, style); }
@@ -90,7 +84,7 @@ public final class GameScreen extends ScreenAdapter {
         Dialog dialog = new Dialog("Nieuw spel", skin) {
             @Override protected void result(Object value) {
                 if (Boolean.TRUE.equals(value)) {
-                    game.newGame(); selected = Location.RED_CREEK;
+                    game.newGame(); selected = Location.RED_CREEK; map.center();
                     message("Een nieuw begin in Red Creek. Je oude opslag blijft bewaard totdat je opnieuw opslaat.");
                 }
             }
@@ -109,10 +103,7 @@ public final class GameScreen extends ScreenAdapter {
     }
     private void message(String text) { status.setText(text); refresh(); }
     private void refresh() {
-        Player p = game.state().player();
-        playerHud.setText(p.name() + "  |  $" + p.money() + "  |  Niveau " + p.level()
-            + "  |  Ervaring " + p.xp() + "/" + p.nextLevelXp() + "  |  Energie " + p.stamina() + "/100");
-        timeHud.setText(game.state().time().display() + "\n" + game.state().location().displayName()); timeHud.setAlignment(Align.right);
+        actionBar.refresh(game.state());
         locationTitle.setText(selected.displayName().toUpperCase(java.util.Locale.ROOT));
         locationInfo.setText(switch (selected) {
             case RED_CREEK -> "Een stoffig dorp met een herberg en een voorraadschuur.";
@@ -123,13 +114,20 @@ public final class GameScreen extends ScreenAdapter {
         travel.setText(selected == game.state().location() ? "Je bent hier" : "Reizen naar deze locatie");
         travel.setDisabled(selected == game.state().location());
         jobs.clearChildren();
-        for (Job job : game.jobsAt(selected)) {
-            jobs.add(button(job.name(), "job-" + job.id(), () -> new WorkDialog(skin, game, job, this::message).show(stage)))
-                .growX().height(38).padBottom(7).row();
+        if (selected == Location.RED_CREEK) {
+            Label note = label(game.state().location() == Location.RED_CREEK
+                ? "Red Creek is je uitvalsbasis. Open de stad om gebouwen te bezoeken. Werk vind je buiten de stad."
+                : "Reis naar Red Creek om de stad te openen en uit te rusten.", "muted");
+            note.setWrap(true); jobs.add(note).width(235).pad(8);
+        } else {
+            for (Job job : game.jobsAt(selected)) {
+                jobs.add(button(job.name(), "job-" + job.id(), () -> new WorkDialog(skin, game, job, this::message).show(stage)))
+                    .growX().height(38).padBottom(7).row();
+            }
         }
-        energyText.setText("ENERGIE  " + p.stamina() + " / 100"); energy.setValue(p.stamina());
         inventory.setText("Inventaris (" + game.state().inventory().totalCount() + ")");
-        sleep.setDisabled(game.state().location() != Location.RED_CREEK);
+        town.setVisible(selected == Location.RED_CREEK);
+        town.setDisabled(game.state().location() != Location.RED_CREEK);
         map.refresh(game, selected);
     }
     @Override public void show() { Gdx.input.setInputProcessor(stage); }

@@ -34,7 +34,7 @@ public final class DesktopSmoke extends Game {
             new Lwjgl3Application(app, config);
             if (app.failure != null) throw new AssertionError("Desktopcontrole mislukt", app.failure);
             check(app.frame >= 14, "Alle stappen moeten zijn uitgevoerd.");
-            System.out.println("DESKTOP SMOKE PASSED: Nederlandse UI, detailmenu, annuleren, alle klussen, terugreis, vondsten, inventarisfilters, opslaan/laden, nieuw spel, formaat en afsluiten.");
+            System.out.println("DESKTOP SMOKE PASSED: glad lettertype, kaart slepen, statusbalken, stadsgebouwen, herberg, achttien klussen, inventaris, instellingen, opslag, formaat en afsluiten.");
         } finally { Files.deleteIfExists(directory.resolve("save.json")); Files.deleteIfExists(directory); }
     }
     @Override public void create() { setScreen(new GameScreen(session, saves)); }
@@ -44,12 +44,22 @@ public final class DesktopSmoke extends Game {
             frame++;
             if (frame == 3) {
                 check(session.state().time().value().equals(GameTime.START), "De klok mag niet lopen tijdens wachten.");
-                for (String name : new String[]{"new-game", "save-game", "load-game", "quit", "inventory", "sleep"}) {
+                for (String name : new String[]{"settings", "inventory", "town", "map-center"}) {
                     Actor actor = stage().getRoot().findActor(name);
                     Vector2 point = actor.localToStageCoordinates(new Vector2());
                     check(point.y >= 0 && point.y + actor.getHeight() <= 800, "Knop past in beeld: " + name);
                 }
-                check(labelText(stage().getRoot()).contains("Spel opslaan"), "Het hoofdmenu is Nederlandstalig.");
+                check(stage().getRoot().findActor("save-game") == null, "Opslaan staat alleen onder instellingen.");
+                check(stage().getRoot().findActor("job-wagons") == null, "In de stad zijn geen werkzaamheden.");
+                check(stage().getRoot().findActor("sleep") == null, "Slapen staat alleen in de herberg.");
+                check(labelText(stage().getRoot()).contains("Instellingen"), "Het hoofdmenu is Nederlandstalig.");
+                verifyDragging();
+                click("town");
+                var townTime = session.state().time().value();
+                for (String building : new String[]{"GUNSMITH", "TOWN_HALL", "TAILOR", "BANK", "INN"}) click("building-" + building);
+                check(session.state().time().value().equals(townTime), "Gebouwen bekijken kost geen tijd.");
+                check(stage().getRoot().findActor("job-wood") == null, "Het stadsvenster biedt geen arbeid.");
+                capture("build/frontier-town.png"); click("town-close");
                 check(labelText(stage().getRoot()).contains("1 april 1880"), "De datum is Nederlandstalig.");
                 // Lege inventaris en filters kosten geen tijd.
                 click("inventory"); click("inventory-WEAPON"); click("inventory-close");
@@ -65,11 +75,20 @@ public final class DesktopSmoke extends Game {
                 click("job-wood"); click("work-confirm");
                 check(session.state().location() == Location.PINE_FOREST, "Werkmenu reist naar de klus.");
                 check(session.state().player().xp() == 20, "Werkmenu geeft ervaring.");
+                check(Math.abs(((ProgressBar) stage().getRoot().findActor("xp-bar")).getValue() - .4f) < .01f, "Ervaringsbalk toont voortgang naar het volgende niveau.");
+                check(((ProgressBar) stage().getRoot().findActor("energy-bar")).getValue() == 61, "Energiebalk verandert na een actie.");
+                click("travel-RED_CREEK");
+                check(((TextButton) stage().getRoot().findActor("town")).isDisabled(), "Je moet eerst naar de stad reizen.");
+                click("travel-PINE_FOREST");
                 check(session.state().player().stamina() == 61, "Reis en werk verbruiken samen 39 energie.");
                 check(session.state().time().value().equals(GameTime.START.plusMinutes(292)), "Reistijd en werkduur kloppen samen.");
+                session.state().player().reward(0, 30); // Exacte grens naar niveau 2 voor de weergavetest.
+                click("travel-PINE_FOREST");
+                check(session.state().player().level() == 2, "De fixture bereikt niveau 2.");
+                check(((ProgressBar) stage().getRoot().findActor("xp-bar")).getValue() == 0, "Ervaringsbalk begint opnieuw na niveauverhoging.");
             } else if (frame == 4) {
                 goHomeAndRest();
-                // Alle twaalf werkzaamheden via hun menu uitvoeren.
+                // Alle achttien werkzaamheden via hun menu uitvoeren.
                 for (Location location : Location.values()) {
                     for (Job job : session.jobsAt(location)) {
                         click("travel-" + location.name());
@@ -93,15 +112,15 @@ public final class DesktopSmoke extends Game {
                 click("inventory-all");
             } else if (frame == 6) {
                 capture("build/frontier-inventory.png"); click("inventory-close");
-                click("save-game"); savedMoney = session.state().player().money();
+                click("settings"); click("save-game"); savedMoney = session.state().player().money();
                 savedInventory = new EnumMap<>(session.state().inventory().contents());
-                click("job-wagons"); click("work-confirm");
-                click("load-game");
+                click("travel-PINE_FOREST"); click("job-wood"); click("work-confirm");
+                click("settings"); click("load-game");
                 check(session.state().player().money() == savedMoney, "Laden herstelt geld.");
                 check(session.state().inventory().contents().equals(savedInventory), "Laden herstelt alle voorwerpen.");
-                click("new-game"); click("new-cancel");
+                click("settings"); click("new-game"); click("new-cancel");
                 check(session.state().player().money() == savedMoney, "Nieuw spel annuleren behoudt voortgang.");
-                click("new-game"); click("new-confirm");
+                click("settings"); click("new-game"); click("new-confirm");
                 check(session.state().inventory().totalCount() == 0, "Nieuw spel leegt inventaris.");
                 check(session.state().time().value().equals(GameTime.START), "Nieuw spel herstelt de klok.");
             } else if (frame == 8) {
@@ -113,7 +132,7 @@ public final class DesktopSmoke extends Game {
             else if (frame == 12) {
                 click("job-branches"); click("work-confirm");
                 check(session.state().location() == Location.PINE_FOREST, "Menu werkt ook na verkleinen.");
-            } else if (frame == 14) { capture("build/frontier-desktop-small.png"); click("quit"); }
+            } else if (frame == 14) { capture("build/frontier-desktop-small.png"); click("settings"); click("quit"); }
         } catch (Throwable e) { failure = e; capture("build/frontier-failure.png"); Gdx.app.exit(); }
     }
     private Stage stage() { return (Stage) Gdx.input.getInputProcessor(); }
@@ -121,7 +140,8 @@ public final class DesktopSmoke extends Game {
         if (session.state().location() != Location.RED_CREEK) {
             click("travel-RED_CREEK"); click("travel"); click("travel-confirm");
         }
-        var before = session.state().time().value(); click("sleep");
+        var before = session.state().time().value();
+        click("town"); click("building-INN"); click("sleep"); click("town-close");
         check(session.state().player().stamina() == 100, "Slapen herstelt alle energie.");
         check(session.state().time().value().equals(before.plusHours(8)), "Slapen duurt acht uur.");
     }
@@ -132,12 +152,46 @@ public final class DesktopSmoke extends Game {
         stage.draw(); // Layout van nieuw aangemaakte knoppen afronden vóór de muisklik.
         Actor actor = stage.getRoot().findActor(name);
         check(actor != null, "Knop bestaat: " + name);
+        ensureVisible(actor);
+        stage.draw();
         check(!(actor instanceof TextButton button) || !button.isDisabled(), "Knop is beschikbaar: " + name);
         Vector2 point = actor.localToStageCoordinates(new Vector2(actor.getWidth() / 2, actor.getHeight() / 2));
         stage.stageToScreenCoordinates(point);
         stage.touchDown(Math.round(point.x), Math.round(point.y), 0, Input.Buttons.LEFT);
         stage.touchUp(Math.round(point.x), Math.round(point.y), 0, Input.Buttons.LEFT);
         for (int i = 0; i < 4; i++) stage.act(.5f); // Rond opeenvolgende dialooganimaties af zonder de spelklok te veranderen.
+    }
+    private void ensureVisible(Actor actor) {
+        for (Actor parent = actor.getParent(); parent != null; parent = parent.getParent()) {
+            if (parent instanceof ScrollPane pane) {
+                Vector2 local = actor.localToAscendantCoordinates(pane.getActor(), new Vector2());
+                pane.scrollTo(local.x, local.y, actor.getWidth(), actor.getHeight(), true, true);
+                pane.updateVisualScroll();
+            }
+        }
+    }
+    private void verifyDragging() {
+        ScrollPane map = stage().getRoot().findActor("world-map");
+        float beforeX = map.getScrollX(), beforeY = map.getScrollY();
+        Vector2 start = map.localToStageCoordinates(new Vector2(405, 190));
+        stage().stageToScreenCoordinates(start);
+        stage().touchDown(Math.round(start.x), Math.round(start.y), 0, Input.Buttons.LEFT);
+        for (int i = 1; i <= 6; i++) stage().touchDragged(Math.round(start.x - i * 14), Math.round(start.y + i * 8), 0);
+        stage().touchUp(Math.round(start.x - 84), Math.round(start.y + 48), 0, Input.Buttons.LEFT);
+        stage().act(.05f); stage().draw();
+        check(Math.abs(map.getScrollX() - beforeX) > 10 || Math.abs(map.getScrollY() - beforeY) > 10, "De kaart beweegt bij verslepen.");
+        check(session.state().time().value().equals(GameTime.START), "Kaart slepen kost geen speltijd.");
+        check(session.state().location() == Location.RED_CREEK, "Kaart slepen reist niet.");
+        click("map-center");
+        // Ook slepen vanaf een locatieknop mag geen onbedoelde selectie doen.
+        Actor marker = stage().getRoot().findActor("travel-PINE_FOREST"); ensureVisible(marker); stage().draw();
+        Vector2 point = marker.localToStageCoordinates(new Vector2(60, 25)); stage().stageToScreenCoordinates(point);
+        stage().touchDown(Math.round(point.x), Math.round(point.y), 0, Input.Buttons.LEFT);
+        for (int i = 1; i <= 6; i++) stage().touchDragged(Math.round(point.x + i * 12), Math.round(point.y), 0);
+        stage().touchUp(Math.round(point.x + 72), Math.round(point.y), 0, Input.Buttons.LEFT);
+        stage().act(.05f); stage().draw();
+        check(stage().getRoot().findActor("job-wood") == null, "Een sleepbeweging vanaf een locatieknop selecteert die niet.");
+        click("map-center");
     }
     private static String labelText(Actor actor) {
         if (actor instanceof Label label) return label.getText().toString();

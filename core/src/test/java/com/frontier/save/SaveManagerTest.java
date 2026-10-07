@@ -17,7 +17,9 @@ class SaveManagerTest {
     private SaveManager manager() { return new SaveManager(directory.resolve("nested/save.json")); }
     @ParameterizedTest @EnumSource(Location.class) void roundTripRetainsEveryField(Location location) throws IOException {
         GameSession game = new GameSession(new Random(1));
-        game.work(); game.work(); game.work(); game.sleep(); game.travel(location); game.work();
+        game.travel(Location.PINE_FOREST); game.work(); game.work();
+        game.travel(Location.RED_CREEK); game.sleep(); game.travel(location);
+        if (location != Location.RED_CREEK) game.work();
         SaveManager saves = manager(); saves.save(game.state());
         GameState loaded = saves.load(), original = game.state();
         assertEquals(original.player().name(), loaded.player().name());
@@ -32,7 +34,7 @@ class SaveManagerTest {
     }
     @Test void savingTwiceReplacesSnapshotAndNewGameDoesNotEraseIt() throws IOException {
         GameSession game = new GameSession(); SaveManager saves = manager();
-        saves.save(game.state()); game.work(); saves.save(game.state());
+        saves.save(game.state()); game.travel(Location.PINE_FOREST); game.work(); saves.save(game.state());
         int savedMoney = game.state().player().money(); game.newGame();
         assertEquals(savedMoney, saves.load().player().money());
     }
@@ -48,7 +50,7 @@ class SaveManagerTest {
     }
     @ParameterizedTest @ValueSource(strings = {"version", "stamina", "level", "location", "dateTime", "money"})
     void corruptFieldsDoNotReplaceCurrentSession(String field) throws IOException {
-        GameSession game = new GameSession(); game.work(); GameState live = game.state();
+        GameSession game = new GameSession(); game.travel(Location.PINE_FOREST); game.work(); GameState live = game.state();
         SaveManager saves = manager(); saves.save(live);
         String json = Files.readString(saves.file());
         String replacement = switch (field) {
