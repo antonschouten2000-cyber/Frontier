@@ -26,6 +26,7 @@ public final class DesktopSmoke extends Game {
     private int frame;
     private Map<Item, Integer> savedInventory;
     private int savedMoney;
+    private java.util.List<Telegram> savedTelegrams;
     private DesktopSmoke(Path directory) { saves = new SaveManager(directory.resolve("save.json")); }
     public static void main(String[] args) throws Exception {
         Path directory = Files.createTempDirectory("frontier-smoke-");
@@ -47,7 +48,7 @@ public final class DesktopSmoke extends Game {
             frame++;
             if (frame == 3) {
                 check(session.state().time().value().equals(GameTime.START), "De klok mag niet lopen tijdens wachten.");
-                for (String name : new String[]{"settings", "inventory", "town", "map-center"}) {
+                for (String name : new String[]{"settings", "inventory", "messages", "town", "map-center"}) {
                     Actor actor = stage().getRoot().findActor(name);
                     Vector2 point = actor.localToStageCoordinates(new Vector2());
                     check(point.y >= 0 && point.y + actor.getHeight() <= 800, "Knop past in beeld: " + name);
@@ -56,6 +57,9 @@ public final class DesktopSmoke extends Game {
                 check(stage().getRoot().findActor("job-wagons") == null, "In de stad zijn geen werkzaamheden.");
                 check(stage().getRoot().findActor("sleep") == null, "Slapen staat alleen in de herberg.");
                 check(labelText(stage().getRoot()).contains("Instellingen"), "Het hoofdmenu is Nederlandstalig.");
+                click("messages");
+                check(labelText(stage().getRoot()).contains("Nog geen telegrammen"), "Een nieuw spel heeft een leeg postvak.");
+                click("messages-close");
                 verifyDragging();
                 verifyLandmarks();
                 click("town");
@@ -78,6 +82,7 @@ public final class DesktopSmoke extends Game {
                 check(session.state().player().stamina() == 100, "Annuleren kost geen energie.");
                 click("job-wood"); click("work-confirm");
                 check(session.state().location() == Location.PINE_FOREST, "Werkmenu reist naar de klus.");
+                verifyTelegram();
                 check(session.state().player().xp() == 20, "Werkmenu geeft ervaring.");
                 check(Math.abs(((ProgressBar) stage().getRoot().findActor("xp-bar")).getValue() - .4f) < .01f, "Ervaringsbalk toont voortgang naar het volgende niveau.");
                 check(((ProgressBar) stage().getRoot().findActor("energy-bar")).getValue() == 61, "Energiebalk verandert na een actie.");
@@ -119,14 +124,17 @@ public final class DesktopSmoke extends Game {
                 capture("build/frontier-inventory.png"); click("inventory-close");
                 click("settings"); click("save-game"); savedMoney = session.state().player().money();
                 savedInventory = new EnumMap<>(session.state().inventory().contents());
+                savedTelegrams = session.state().mailbox().messages();
                 click("travel-PINE_FOREST"); click("job-wood"); click("work-confirm");
                 click("settings"); click("load-game");
                 check(session.state().player().money() == savedMoney, "Laden herstelt geld.");
                 check(session.state().inventory().contents().equals(savedInventory), "Laden herstelt alle voorwerpen.");
+                check(session.state().mailbox().messages().equals(savedTelegrams), "Laden herstelt berichten en leesstatus.");
                 click("settings"); click("new-game"); click("new-cancel");
                 check(session.state().player().money() == savedMoney, "Nieuw spel annuleren behoudt voortgang.");
                 click("settings"); click("new-game"); click("new-confirm");
                 check(session.state().inventory().totalCount() == 0, "Nieuw spel leegt inventaris.");
+                check(session.state().mailbox().size() == 0, "Nieuw spel leegt de berichten.");
                 check(session.state().time().value().equals(GameTime.START), "Nieuw spel herstelt de klok.");
             } else if (frame == 8) {
                 check(!labelText(stage().getRoot()).contains("Sleep de kaart"), "De sleepinstructie is verwijderd.");
@@ -138,6 +146,7 @@ public final class DesktopSmoke extends Game {
             else if (frame == 12) {
                 click("job-branches"); click("work-confirm");
                 check(session.state().location() == Location.PINE_FOREST, "Menu werkt ook na verkleinen.");
+                verifyTelegram();
             } else if (frame == 14) { capture("build/frontier-desktop-small.png"); Gdx.graphics.setWindowedMode(1920, 1080); }
             else if (frame == 17) {
                 ScrollPane map = stage().getRoot().findActor("world-map");
@@ -147,6 +156,7 @@ public final class DesktopSmoke extends Game {
                 check(background.getWidth() == WorldMap.WIDTH * .75f, "Een groter venster zoomt het terrein niet opnieuw in.");
                 click("map-center"); goHomeAndRest(); click("town");
                 capture("build/frontier-desktop-large-town.png"); click("town-close");
+                verifyLiveTelegram();
             } else if (frame == 20) { capture("build/frontier-desktop-large.png"); click("settings"); click("quit"); }
         } catch (Throwable e) { failure = e; capture("build/frontier-failure.png"); Gdx.app.exit(); }
     }
@@ -180,6 +190,18 @@ public final class DesktopSmoke extends Game {
             getScreen().render(0); // De game, niet de klikhelper, rondt de verstreken klus af.
         }
     }
+    private void verifyTelegram() {
+        int index = session.state().mailbox().size() - 1; Telegram message = session.state().mailbox().messages().get(index);
+        Actor inventory = stage().getRoot().findActor("inventory"), messages = stage().getRoot().findActor("messages");
+        check(messages.getX() > inventory.getX(), "De berichtenknop staat naast Inventaris.");
+        click("messages"); click("telegram-" + index);
+        String text = labelText(stage().getRoot().findActor("telegram-details"));
+        check(text.contains(message.jobName()) && text.contains("Opbrengst: $" + message.money()), "Het telegram noemt de arbeid en werkelijke betaling.");
+        check(text.contains("Werktijd:") && text.contains("Ervaring: +" + message.xp()), "Het telegram toont tijd en ervaring.");
+        check(text.contains(message.found() == null ? "Geen voorwerpen." : message.found().displayName()), "Het telegram vermeldt de werkelijke vondst.");
+        check(session.state().mailbox().messages().get(index).read(), "Openen markeert een telegram als gelezen.");
+        capture("build/frontier-messages.png"); click("messages-close");
+    }
     private void verifyDurationChoices() {
         goHomeAndRest(); click("travel-PINE_FOREST"); click("job-wood");
         for (WorkDuration duration : WorkDuration.values()) {
@@ -201,6 +223,16 @@ public final class DesktopSmoke extends Game {
         check(!session.isWorking(), "Een klus van vijftien seconden is klaar na vijftien seconden.");
         check(session.state().player().money() > cash, "Een korte klus levert geld op.");
         autoFinishWork = true; goHomeAndRest();
+    }
+    private void verifyLiveTelegram() {
+        click("travel-PINE_FOREST"); click("job-wood"); click("work-duration-QUICK");
+        autoFinishWork = false; click("work-confirm");
+        int before = session.state().mailbox().size(); click("messages");
+        clock.advanceSeconds(15); getScreen().render(0);
+        check(session.state().mailbox().size() == before + 1, "Een afgeronde klus levert een nieuw telegram op.");
+        check(stage().getRoot().findActor("telegram-" + before) != null, "Nieuwe post verschijnt in een al geopend berichtenvenster.");
+        click("telegram-" + before); check(labelText(stage().getRoot().findActor("telegram-details")).contains("15 seconden"), "Een kort telegram toont de gekozen seconden.");
+        click("messages-close"); autoFinishWork = true;
     }
     private static final class TestClock extends Clock {
         private Instant now = Instant.parse("2026-10-07T12:00:00Z");

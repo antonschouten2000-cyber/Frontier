@@ -25,7 +25,7 @@ class InventorySaveTest {
             """);
         SaveManager saves = new SaveManager(file); GameState loaded = saves.load();
         assertEquals(0, loaded.inventory().totalCount()); assertEquals("Reiziger", loaded.player().name());
-        saves.save(loaded); assertTrue(Files.readString(file).contains("\"version\": 3"));
+        saves.save(loaded); assertTrue(Files.readString(file).contains("\"version\": 4"));
     }
     @Test void versionTwoSaveRetainsInventoryWithoutCreatingATimer() throws IOException {
         Path file = directory.resolve("save.json");

@@ -20,7 +20,7 @@ public final class GameScreen extends ScreenAdapter {
     private final Label locationTitle = label("", "accent"), locationInfo = label("", "muted");
     private final Label status = label("Welkom in Red Creek. Twintig dollar en een nieuw begin. Kies een locatie of zoek een klus.", "default");
     private final Table jobs = new Table();
-    private final TextButton travel, town, inventory;
+    private final TextButton travel, town, inventory, messages;
     private final MapPanel map;
     private Cell<WorkProgress> workProgressCell;
     private Location selected = Location.RED_CREEK;
@@ -30,6 +30,7 @@ public final class GameScreen extends ScreenAdapter {
         travel = button("Reizen", "travel", this::confirmTravel);
         town = button("Stad openen", "town", () -> new TownDialog(skin, game, this::message).show(stage));
         inventory = button("Inventaris", "inventory", () -> new InventoryDialog(skin, game.state().inventory()).show(stage));
+        messages = button("Berichten", "messages", () -> new MessagesDialog(skin, game.state().mailbox(), this::refresh).show(stage));
         map = new MapPanel(skin, location -> { selected = location; refresh(); },
             site -> new LandmarkDialog(skin, site).show(stage));
         status.setWrap(true); locationInfo.setWrap(true);
@@ -62,6 +63,7 @@ public final class GameScreen extends ScreenAdapter {
         journal.add(status).growX().height(48).left(); root.add(journal).growX().padBottom(16).row();
         Table menu = new Table(); menu.defaults().height(44).padRight(8);
         menu.add(inventory).width(200);
+        menu.add(messages).width(200);
         menu.add(label("De klok wacht op jou.", "muted")).expandX();
         menu.add(button("Instellingen", "settings", () ->
             new SettingsDialog(skin, this::confirmNewGame, this::save, this::load).show(stage))).width(175).padRight(0);
@@ -139,6 +141,7 @@ public final class GameScreen extends ScreenAdapter {
             }
         }
         inventory.setText("Inventaris (" + game.state().inventory().totalCount() + ")");
+        messages.setText("Berichten (" + game.state().mailbox().unreadCount() + ")");
         town.setVisible(selected == Location.RED_CREEK);
         town.setDisabled(game.state().location() != Location.RED_CREEK || game.isWorking());
         map.refresh(game, selected);

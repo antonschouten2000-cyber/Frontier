@@ -94,10 +94,11 @@ public final class GameSession {
         int previousLevel = state.player().level();
         state.player().reward(pay, job.xp(duration));
         state.time().advanceSeconds(duration.seconds());
-        String found = loot.find(job.location(), duration).map(item -> {
-            state.inventory().add(item);
-            return " Gevonden: " + item.displayName() + "!";
-        }).orElse("");
+        Item item = loot.find(job.location(), duration).orElse(null);
+        if (item != null) state.inventory().add(item);
+        state.mailbox().add(new Telegram(job.name(), job.location(), duration.seconds(), pay, job.xp(duration),
+            item, state.time().value(), false));
+        String found = item == null ? "" : " Gevonden: " + item.displayName() + "!";
         return job.name() + ": $" + pay + " en " + job.xp(duration) + " ervaring verdiend."
             + (state.player().level() > previousLevel ? " Nieuw niveau: " + state.player().level() + "!" : "") + found;
     }

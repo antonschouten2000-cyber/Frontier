@@ -8,6 +8,7 @@ public final class GameState {
     private Location location;
     private final Inventory inventory;
     private ActiveWork activeWork;
+    private final Mailbox mailbox = new Mailbox();
     public GameState() { this(new Player(), new GameTime(), Location.RED_CREEK); }
     public GameState(Player player, GameTime time, Location location) {
         this(player, time, location, new Inventory());
@@ -26,6 +27,7 @@ public final class GameState {
             throw new IllegalArgumentException("Werklocatie komt niet overeen met de spelerlocatie.");
         activeWork = work;
     }
+    public Mailbox mailbox() { return mailbox; }
     public Inventory inventory() { return inventory; }
     public Player player() { return player; }
     public GameTime time() { return time; }

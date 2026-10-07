@@ -29,7 +29,7 @@ class SaveManagerTest {
         assertEquals(original.player().xp(), loaded.player().xp());
         assertEquals(original.location(), loaded.location());
         assertEquals(original.time().value(), loaded.time().value());
-        assertTrue(Files.readString(saves.file()).contains("\"version\": 3"));
+        assertTrue(Files.readString(saves.file()).contains("\"version\": 4"));
         try (var files = Files.list(saves.file().getParent())) { assertEquals(1, files.count()); }
     }
     @Test void savingTwiceReplacesSnapshotAndNewGameDoesNotEraseIt() throws IOException {

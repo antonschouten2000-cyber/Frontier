@@ -54,11 +54,17 @@ De knop **Inventaris** toont gestapelde aantallen en filters voor **Alles**, **W
 
 Reizen gaat rechtstreeks tussen locaties. Afstand bepaalt de energiekosten; iedere energie-eenheid staat voor 8 minuten reistijd.
 
+## Telegrammen
+
+Naast **Inventaris** staat **Berichten**, met het aantal ongelezen telegrammen. Iedere afgeronde werkzaamheid levert precies één telegram op. Je ziet de arbeid, locatie, gekozen werktijd, speldatum, werkelijk verdiend geld en ervaring, en het gevonden voorwerp (of **Geen voorwerpen**). De nieuwste post staat bovenaan; klik op een telegram om het te lezen. Nieuwe berichten verschijnen ook als het venster al open is. Het postvak bewaart de laatste honderd telegrammen. Bekijken kost geen tijd of energie.
+
+Telegrammen en hun leesstatus gaan mee in de save. Een nieuw spel begint met een leeg postvak; oude saves krijgen bij het laden een leeg postvak.
+
 ## Opslaan
 
 **Nieuw spel**, **Spel opslaan**, **Spel laden** en **Afsluiten** staan onder **Instellingen** rechts onderaan. De inventaris blijft direct bereikbaar. Nieuw spel vraagt bevestiging. Er is één opslagplek voor handmatige opslag; Afsluiten slaat niet automatisch op. Een nieuw spel verwijdert je eerdere save niet, totdat je opnieuw opslaat.
 
-De JSON-save staat standaard in `.frontier/save.json` onder je gebruikersmap (`user.home`). Hij bevat versie, spelernaam, geld, niveau, ervaring, energie, locatie en datum/tijd plus de volledige inventaris en eventuele lopende klus. Versie-3 saves bewaren het begin- en eindtijdstip van de echte werktimer. Na laden wordt de resterende tijd hervat; als de tijd al verstreken is, wordt de klus één keer afgerond. Sla tijdens een lange klus op als je het spel wilt afsluiten. Opslaan gebruikt een tijdelijk bestand en waar ondersteund een atomische vervanging. Oude versie-1 en versie-2 saves blijven bruikbaar; versie 1 krijgt een lege inventaris. De oorspronkelijke standaardnaam Traveler wordt Reiziger. Ontbrekende of ongeldige saves geven een melding en laten de huidige game intact.
+De JSON-save staat standaard in `.frontier/save.json` onder je gebruikersmap (`user.home`). Hij bevat versie, spelernaam, geld, niveau, ervaring, energie, locatie en datum/tijd plus de volledige inventaris, eventuele lopende klus en telegrammen met leesstatus. Versie-4 saves bewaren het begin- en eindtijdstip van de echte werktimer. Na laden wordt de resterende tijd hervat; als de tijd al verstreken is, wordt de klus één keer afgerond. Sla tijdens een lange klus op als je het spel wilt afsluiten. Opslaan gebruikt een tijdelijk bestand en waar ondersteund een atomische vervanging. Oude versie-1, versie-2 en versie-3 saves blijven bruikbaar; versie 1 krijgt een lege inventaris. De oorspronkelijke standaardnaam Traveler wordt Reiziger. Ontbrekende of ongeldige saves geven een melding en laten de huidige game intact.
 
 Voor een andere opslagmap, bijvoorbeeld in de cloud:
 
@@ -84,20 +90,20 @@ Voor een uitgepakte distributie kan dezelfde map worden gekozen via de JVM-optie
 
 De uitvoerbare distributie staat in `lwjgl3/build/install/lwjgl3/`. Start `bin/lwjgl3` of `bin/lwjgl3.bat`; een JDK/JRE 21+ blijft nodig. Op macOS voeg je bij deze launcher `-XstartOnFirstThread` toe aan `JAVA_OPTS`.
 
-`./gradlew test` draait 106 tests voor de gameplay-loop, alle 42 werkzaamheden, energie, level-ups, klok, echte werktimers, beloningen op het eindtijdstip, hervatten na offline tijd, vondstkansen, stapeling, opslagmigratie, JSON-roundtrips en ongeldige saves. Een aparte desktoptest opent een echt venster en klikt de Scene2D-knoppen:
+`./gradlew test` draait 120 tests voor de gameplay-loop, alle 42 werkzaamheden, energie, level-ups, klok, echte werktimers, beloningen op het eindtijdstip, hervatten na offline tijd, telegrammen, leesstatus, postvakopslag, vondstkansen, stapeling, opslagmigratie, JSON-roundtrips en ongeldige saves. Een aparte desktoptest opent een echt venster en klikt de Scene2D-knoppen:
 
 ```sh
 ./gradlew :lwjgl3:desktopSmoke
 ```
 
-Deze test gebruikt een tijdelijke save en verandert jouw eigen save niet. Hij controleert de uitgezoomde versleepbare kaart, de vier toekomstige aankoopplekken, statusbalken, stadsgebouwen, herberg, instellingen, alle 42 werkzaamheden, detailmenu’s, annuleren, uitputting, terugreis, slapen, vondsten, inventarisfilters, opslaan/laden, Nieuw spel, kleine en grote venstergroottes, meegroeiende kaartpanelen en Afsluiten. Screenshots staan na de test in `build/frontier-desktop.png` en `build/frontier-desktop-small.png`, `build/frontier-work.png`, `build/frontier-inventory.png`, `build/frontier-town.png` en `build/frontier-active-work.png`. Zonder desktop kan hij met Xvfb worden uitgevoerd, bijvoorbeeld `xvfb-run -a ./gradlew :lwjgl3:desktopSmoke`.
+Deze test gebruikt een tijdelijke save en verandert jouw eigen save niet. Hij controleert de uitgezoomde versleepbare kaart, de vier toekomstige aankoopplekken, statusbalken, stadsgebouwen, herberg, instellingen, alle 42 werkzaamheden, detailmenu’s, annuleren, uitputting, terugreis, slapen, vondsten, inventarisfilters, opslaan/laden, Nieuw spel, kleine en grote venstergroottes, meegroeiende kaartpanelen en Afsluiten. Screenshots staan na de test in `build/frontier-desktop.png` en `build/frontier-desktop-small.png`, `build/frontier-work.png`, `build/frontier-inventory.png`, `build/frontier-town.png` en `build/frontier-active-work.png`. Telegrammen staan in `build/frontier-messages.png`. Zonder desktop kan hij met Xvfb worden uitgevoerd, bijvoorbeeld `xvfb-run -a ./gradlew :lwjgl3:desktopSmoke`.
 
 ## Architectuur
 
-- `core/model`: `Player`, `GameTime`, `Location`, `Job`, `GameState`, `Item`, `Inventory`, `WorldMap`, `Landmark`, `WorkDuration`, `TimeRules`, `ActiveWork`.
+- `core/model`: `Player`, `GameTime`, `Location`, `Job`, `GameState`, `Item`, `Inventory`, `WorldMap`, `Landmark`, `WorkDuration`, `TimeRules`, `ActiveWork`, `Telegram`, `Mailbox`.
 - `core/logic`: `GameSession` voert acties uit; `JobManager` bevat de 42 werkzaamheden en willekeurige betaling. `LootManager` bepaalt vondsten. Geen afhankelijkheid van UI. `GameSession` gebruikt een injecteerbare `Clock` voor de werktimers, zodat tests niet echt hoeven te wachten.
-- `core/save`: `SaveManager` valideert en bewaart versie-3 JSON met inventaris en werktimer; versie-1 en versie-2 saves worden ook geladen.
-- `core/ui`: `GameScreen`, `ActionBar`, `SettingsDialog`, `TownDialog`, `TownArtwork`, `TownBuilding`, `WorkDialog`, `InventoryDialog`, `MapPanel`, `FrontierSkin`, `WoodTexture`, `MapArtwork`, `WorldArtwork`, `LandmarkDialog`, `WorkProgress` verzorgen uitsluitend presentatie en bediening.
+- `core/save`: `SaveManager` valideert en bewaart versie-4 JSON met inventaris, werktimer en telegrammen; versie-1, versie-2 en versie-3 saves worden ook geladen.
+- `core/ui`: `GameScreen`, `ActionBar`, `SettingsDialog`, `TownDialog`, `TownArtwork`, `TownBuilding`, `WorkDialog`, `InventoryDialog`, `MapPanel`, `FrontierSkin`, `WoodTexture`, `MapArtwork`, `WorldArtwork`, `LandmarkDialog`, `WorkProgress`, `MessagesDialog` verzorgen uitsluitend presentatie en bediening.
 - `lwjgl3`: desktoplauncher en desktop-smoketest.
 
 Deze versie bevat een versleepbare wereldkaart, 42 werkzaamheden met echte werktimers buiten de stad, een stadsvenster met vijf gebouwen, niveaus, slapen, vondsten, inventaris en opslag via instellingen.

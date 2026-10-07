@@ -24,7 +24,13 @@ public final class SaveManager {
     public void save(GameState state) throws IOException {
         SaveData data = new SaveData();
         Player player = state.player();
-        data.version = 3;
+        data.version = 4;
+        data.telegrams = state.mailbox().messages().stream().map(message -> {
+            TelegramData entry = new TelegramData(); entry.jobName = message.jobName(); entry.location = message.location().name();
+            entry.durationSeconds = message.durationSeconds(); entry.money = message.money(); entry.xp = message.xp();
+            entry.found = message.found() == null ? null : message.found().name();
+            entry.dateTime = message.dateTime().toString(); entry.read = message.read(); return entry;
+        }).toArray(TelegramData[]::new);
         if (state.activeWork() != null) {
             ActiveWork work = state.activeWork(); data.activeWork = new WorkData();
             data.activeWork.jobId = work.job().id(); data.activeWork.duration = work.duration().name();
@@ -55,7 +61,7 @@ public final class SaveManager {
     }
     public GameState load() throws IOException {
         if (!Files.isRegularFile(file)) throw new IOException("Nog geen opgeslagen spel. Kies eerst Spel opslaan.");
-        if (Files.size(file) > 64 * 1024) throw new IOException("Het opslagbestand is te groot.");
+        if (Files.size(file) > 256 * 1024) throw new IOException("Het opslagbestand is te groot.");
         try {
             JsonValue root = new JsonReader().parse(Files.readString(file, StandardCharsets.UTF_8));
             if (!root.isObject()) throw new IllegalArgumentException("Ongeldig opslagformaat.");
@@ -73,7 +79,7 @@ public final class SaveManager {
                 if (!root.get(field).isString()) throw new IllegalArgumentException("Ongeldige tekst: " + field);
             }
             int version = root.getInt("version");
-            if (version != 1 && version != 2 && version != 3) throw new IllegalArgumentException("Deze opslagversie wordt niet ondersteund.");
+            if (version < 1 || version > 4) throw new IllegalArgumentException("Deze opslagversie wordt niet ondersteund.");
             Inventory inventory = new Inventory();
             if (version >= 2) {
                 JsonValue entries = root.get("inventory");
@@ -100,16 +106,43 @@ public final class SaveManager {
                 loaded.setActiveWork(new ActiveWork(JobManager.byId(work.getString("jobId")),
                     WorkDuration.valueOf(work.getString("duration")), work.getLong("startedAt"), work.getLong("endsAt")));
             }
+            if (version >= 4) {
+                JsonValue messages = root.get("telegrams");
+                if (messages == null || !messages.isArray() || messages.size > Mailbox.MAX_MESSAGES)
+                    throw new IllegalArgumentException("Ongeldige berichtenlijst.");
+                for (JsonValue entry : messages) loaded.mailbox().add(readTelegram(entry));
+            }
             return loaded;
         } catch (RuntimeException e) {
             throw new IOException("Dit spel kan niet worden geladen: " + e.getMessage(), e);
         }
+    }
+    private static Telegram readTelegram(JsonValue entry) {
+        if (!entry.isObject()) throw new IllegalArgumentException("Ongeldig telegram.");
+        for (String field : new String[]{"jobName", "location", "dateTime"})
+            if (!entry.has(field) || !entry.get(field).isString()) throw new IllegalArgumentException("Ongeldige telegramtekst.");
+        for (String field : new String[]{"durationSeconds", "money", "xp"})
+            if (!entry.has(field) || !entry.get(field).isLong() || entry.getLong(field) < 0 || entry.getLong(field) > Integer.MAX_VALUE)
+                throw new IllegalArgumentException("Ongeldig telegramgetal.");
+        if (!entry.has("read") || !entry.get("read").isBoolean() || !entry.has("found")
+            || !entry.get("found").isNull() && !entry.get("found").isString())
+            throw new IllegalArgumentException("Ongeldige telegramgegevens.");
+        Item found = entry.get("found").isNull() ? null : Item.valueOf(entry.getString("found"));
+        return new Telegram(entry.getString("jobName"), Location.valueOf(entry.getString("location")),
+            entry.getInt("durationSeconds"), entry.getInt("money"), entry.getInt("xp"), found,
+            LocalDateTime.parse(entry.getString("dateTime")), entry.getBoolean("read"));
+    }
+    public static final class TelegramData {
+        public String jobName, location, found, dateTime;
+        public int durationSeconds, money, xp;
+        public boolean read;
     }
     public static final class SaveData {
         public int version, money, level, xp, stamina;
         public String player, location, dateTime;
         public java.util.Map<String, Integer> inventory;
         public WorkData activeWork;
+        public TelegramData[] telegrams;
     }
     public static final class WorkData {
         public String jobId, duration;
