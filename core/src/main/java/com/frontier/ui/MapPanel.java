@@ -4,6 +4,8 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.frontier.logic.GameSession;
 import com.frontier.model.Location;
+import com.frontier.model.Landmark;
+import com.frontier.model.WorldMap;
 import java.util.EnumMap;
 import java.util.function.Consumer;
 
@@ -11,7 +13,7 @@ import java.util.function.Consumer;
 final class MapPanel extends ScrollPane {
     private final MapCanvas canvas;
     private boolean centered;
-    MapPanel(Skin skin, Consumer<Location> onSelect) { this(new MapCanvas(skin, onSelect), skin); }
+    MapPanel(Skin skin, Consumer<Location> onSelect, Consumer<Landmark> onLandmark) { this(new MapCanvas(skin, onSelect, onLandmark), skin); }
     private MapPanel(MapCanvas canvas, Skin skin) {
         super(canvas, skin); this.canvas = canvas;
         setName("world-map"); setFadeScrollBars(false); setOverscroll(false, false);
@@ -26,16 +28,21 @@ final class MapPanel extends ScrollPane {
     void dispose() { canvas.artwork.dispose(); }
 
     private static final class MapCanvas extends WidgetGroup {
-        private static final float WIDTH = 1200, HEIGHT = 660;
-        private final Texture artwork = MapArtwork.create();
+        private static final float WIDTH = WorldMap.WIDTH, HEIGHT = WorldMap.HEIGHT;
+        private final Texture artwork = WorldArtwork.create();
         private final Image background = new Image(artwork);
+        private final EnumMap<Landmark, TextButton> landmarks = new EnumMap<>(Landmark.class);
         private final EnumMap<Location, TextButton> markers = new EnumMap<>(Location.class);
         private final Skin skin;
-        MapCanvas(Skin skin, Consumer<Location> onSelect) {
+        MapCanvas(Skin skin, Consumer<Location> onSelect, Consumer<Landmark> onLandmark) {
             this.skin = skin; setName("map-canvas"); addActor(background);
             for (Location location : Location.values()) {
                 TextButton marker = Ui.button(skin, location.displayName(), "travel-" + location.name(), () -> onSelect.accept(location));
                 markers.put(location, marker); addActor(marker);
+            }
+            for (Landmark site : Landmark.values()) {
+                TextButton marker = Ui.button(skin, site.displayName() + "\n" + site.kind(), "landmark-" + site.name(), () -> onLandmark.accept(site));
+                landmarks.put(site, marker); addActor(marker);
             }
         }
         @Override public float getPrefWidth() { return WIDTH; }
@@ -43,7 +50,8 @@ final class MapPanel extends ScrollPane {
         @Override public void layout() {
             background.setBounds(0, 0, getWidth(), getHeight());
             markers.forEach((location, marker) -> marker.setBounds(
-                location.x() * getWidth() - 88, location.y() * getHeight() - 26, 176, 52));
+                WorldMap.x(location) - 88, WorldMap.y(location) - 26, 176, 52));
+            landmarks.forEach((site, marker) -> marker.setBounds(site.x() - 105, site.y() - 28, 210, 56));
         }
         void refresh(GameSession game, Location selected) {
             markers.forEach((location, marker) -> {

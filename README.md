@@ -18,6 +18,7 @@ Je begint als **Reiziger** in **Red Creek** met $20, 100 energie, niveau 1 en 0 
 
 - Klik op een locatie om die te bekijken. Dit kost geen tijd of energie. Kies **Reizen naar deze locatie** om een reis te bevestigen, of klik op een van de werkzaamheden.
 - Houd de linkermuisknop ingedrukt en sleep om de grotere kaart te verplaatsen. Een sleepbeweging selecteert geen locatie en kost geen tijd of energie. **Kaart centreren** herstelt het overzicht.
+- De wereldkaart bevat 1600 × 960 pixels terrein op oorspronkelijke schaal. Rond de bestaande streek liggen de spookdorpen **Droge Bron**, **Zandvallei** en **Verloren Kreek**, plus **Fort Zandsteen**. Klik erop voor informatie. Aankopen is gereserveerd voor een volgende versie; de prijs is nog te bepalen. Deze plekken zijn nog geen reis- of werklocaties.
 - De werkknoppen tonen alleen de naam. Het detailmenu toont de opbrengst, ervaring, energie, werkduur en reistijd erheen. **Aan het werk** start een lokale klus; **Reizen en werken** voert de reis en klus samen uit. **Terug** annuleert zonder kosten.
 - Elke afgeronde klus geeft geld en ervaring, met een kleine variatie in betaling.
 - Als je te moe bent, reis terug naar Red Creek. Open daar **Stad openen**, kies **Herberg** en klik op **Acht uur slapen**: gratis, +8 uur en energie naar 100.
@@ -67,20 +68,20 @@ Voor een uitgepakte distributie kan dezelfde map worden gekozen via de JVM-optie
 
 De uitvoerbare distributie staat in `lwjgl3/build/install/lwjgl3/`. Start `bin/lwjgl3` of `bin/lwjgl3.bat`; een JDK/JRE 21+ blijft nodig. Op macOS voeg je bij deze launcher `-XstartOnFirstThread` toe aan `JAVA_OPTS`.
 
-`./gradlew test` draait 59 tests voor de gameplay-loop, alle achttien werkzaamheden, energie, level-ups, klok, vondstkansen, stapeling, opslagmigratie, JSON-roundtrips en ongeldige saves. Een aparte desktoptest opent een echt venster en klikt de Scene2D-knoppen:
+`./gradlew test` draait 62 tests voor de gameplay-loop, alle achttien werkzaamheden, energie, level-ups, klok, vondstkansen, stapeling, opslagmigratie, JSON-roundtrips en ongeldige saves. Een aparte desktoptest opent een echt venster en klikt de Scene2D-knoppen:
 
 ```sh
 ./gradlew :lwjgl3:desktopSmoke
 ```
 
-Deze test gebruikt een tijdelijke save en verandert jouw eigen save niet. Hij controleert de versleepbare kaart, statusbalken, stadsgebouwen, herberg, instellingen, alle achttien werkzaamheden, detailmenu’s, annuleren, uitputting, terugreis, slapen, vondsten, inventarisfilters, opslaan/laden, Nieuw spel, venstergrootte en Afsluiten. Screenshots staan na de test in `build/frontier-desktop.png` en `build/frontier-desktop-small.png`, `build/frontier-work.png`, `build/frontier-inventory.png` en `build/frontier-town.png`. Zonder desktop kan hij met Xvfb worden uitgevoerd, bijvoorbeeld `xvfb-run -a ./gradlew :lwjgl3:desktopSmoke`.
+Deze test gebruikt een tijdelijke save en verandert jouw eigen save niet. Hij controleert de grotere versleepbare kaart op oorspronkelijke schaal, de vier toekomstige aankoopplekken, statusbalken, stadsgebouwen, herberg, instellingen, alle achttien werkzaamheden, detailmenu’s, annuleren, uitputting, terugreis, slapen, vondsten, inventarisfilters, opslaan/laden, Nieuw spel, venstergrootte en Afsluiten. Screenshots staan na de test in `build/frontier-desktop.png` en `build/frontier-desktop-small.png`, `build/frontier-work.png`, `build/frontier-inventory.png` en `build/frontier-town.png`. Zonder desktop kan hij met Xvfb worden uitgevoerd, bijvoorbeeld `xvfb-run -a ./gradlew :lwjgl3:desktopSmoke`.
 
 ## Architectuur
 
-- `core/model`: `Player`, `GameTime`, `Location`, `Job`, `GameState`, `Item`, `Inventory`.
+- `core/model`: `Player`, `GameTime`, `Location`, `Job`, `GameState`, `Item`, `Inventory`, `WorldMap`, `Landmark`.
 - `core/logic`: `GameSession` voert acties uit; `JobManager` bevat de achttien werkzaamheden en willekeurige betaling. `LootManager` bepaalt vondsten. Geen afhankelijkheid van UI of systeemklok.
 - `core/save`: `SaveManager` valideert en bewaart versie-2 JSON met inventaris; versie-1 saves krijgen bij laden een lege inventaris.
-- `core/ui`: `GameScreen`, `ActionBar`, `SettingsDialog`, `TownDialog`, `TownArtwork`, `TownBuilding`, `WorkDialog`, `InventoryDialog`, `MapPanel`, `FrontierSkin`, `WoodTexture`, `MapArtwork` verzorgen uitsluitend presentatie en bediening.
+- `core/ui`: `GameScreen`, `ActionBar`, `SettingsDialog`, `TownDialog`, `TownArtwork`, `TownBuilding`, `WorkDialog`, `InventoryDialog`, `MapPanel`, `FrontierSkin`, `WoodTexture`, `MapArtwork`, `WorldArtwork`, `LandmarkDialog` verzorgen uitsluitend presentatie en bediening.
 - `lwjgl3`: desktoplauncher en desktop-smoketest.
 
 Deze versie bevat een versleepbare wereldkaart, achttien werkzaamheden buiten de stad, een stadsvenster met vijf gebouwen, niveaus, slapen, vondsten, inventaris en opslag via instellingen.

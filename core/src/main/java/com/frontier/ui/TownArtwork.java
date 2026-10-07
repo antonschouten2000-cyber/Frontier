@@ -36,7 +36,7 @@ final class TownArtwork {
         color("684e34"); p.drawRectangle(2, 2, WIDTH - 4, HEIGHT - 4);
     }
     private void building(int x, int index) {
-        int y = index == 1 ? 82 : 127, width = 159, height = 112;
+        int y = 127, width = 159, height = 112;
         color("a58b63"); p.fillRectangle(x + 7, y + 8, width, height + 8);
         color(switch (index) { case 0 -> "a97448"; case 1 -> "c3b794"; case 2 -> "ab936d"; case 3 -> "a06341"; default -> "8c927d"; });
         p.fillRectangle(x, y, width, height);

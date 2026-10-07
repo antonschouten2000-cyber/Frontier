@@ -28,7 +28,8 @@ public final class GameScreen extends ScreenAdapter {
         travel = button("Reizen", "travel", this::confirmTravel);
         town = button("Stad openen", "town", () -> new TownDialog(skin, game, this::message).show(stage));
         inventory = button("Inventaris", "inventory", () -> new InventoryDialog(skin, game.state().inventory()).show(stage));
-        map = new MapPanel(skin, location -> { selected = location; refresh(); });
+        map = new MapPanel(skin, location -> { selected = location; refresh(); },
+            site -> new LandmarkDialog(skin, site).show(stage));
         status.setWrap(true); locationInfo.setWrap(true);
         status.setName("status");
         Table root = new Table(); root.setFillParent(true); root.pad(20); root.setBackground(skin.getDrawable("wood")); stage.addActor(root);

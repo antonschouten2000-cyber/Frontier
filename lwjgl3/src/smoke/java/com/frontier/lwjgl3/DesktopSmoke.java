@@ -34,7 +34,7 @@ public final class DesktopSmoke extends Game {
             new Lwjgl3Application(app, config);
             if (app.failure != null) throw new AssertionError("Desktopcontrole mislukt", app.failure);
             check(app.frame >= 14, "Alle stappen moeten zijn uitgevoerd.");
-            System.out.println("DESKTOP SMOKE PASSED: glad lettertype, kaart slepen, statusbalken, stadsgebouwen, herberg, achttien klussen, inventaris, instellingen, opslag, formaat en afsluiten.");
+            System.out.println("DESKTOP SMOKE PASSED: glad lettertype, grotere kaart op oorspronkelijke schaal, vier toekomstige bezittingen, kaart slepen, statusbalken, stadsgebouwen, herberg, achttien klussen, inventaris, instellingen, opslag, formaat en afsluiten.");
         } finally { Files.deleteIfExists(directory.resolve("save.json")); Files.deleteIfExists(directory); }
     }
     @Override public void create() { setScreen(new GameScreen(session, saves)); }
@@ -54,6 +54,7 @@ public final class DesktopSmoke extends Game {
                 check(stage().getRoot().findActor("sleep") == null, "Slapen staat alleen in de herberg.");
                 check(labelText(stage().getRoot()).contains("Instellingen"), "Het hoofdmenu is Nederlandstalig.");
                 verifyDragging();
+                verifyLandmarks();
                 click("town");
                 var townTime = session.state().time().value();
                 for (String building : new String[]{"GUNSMITH", "TOWN_HALL", "TAILOR", "BANK", "INN"}) click("building-" + building);
@@ -169,6 +170,26 @@ public final class DesktopSmoke extends Game {
                 pane.updateVisualScroll();
             }
         }
+    }
+    private void verifyLandmarks() {
+        ScrollPane map = stage().getRoot().findActor("world-map");
+        Image background = (Image) ((Group) map.getActor()).getChildren().first();
+        check(background.getWidth() == WorldMap.WIDTH && background.getHeight() == WorldMap.HEIGHT,
+            "De kaart toont de volledige nieuwe wereld op oorspronkelijke schaal.");
+        var time = session.state().time().value();
+        int cash = session.state().player().money(), energy = session.state().player().stamina();
+        for (Landmark site : Landmark.values()) {
+            click("landmark-" + site.name());
+            check(labelText(stage().getRoot()).contains(site.displayName()), "Het informatievenster noemt de plek.");
+            check(labelText(stage().getRoot()).contains("Prijs nog te bepalen"), "Er is nog geen aankoopprijs vastgesteld.");
+            check(((TextButton) stage().getRoot().findActor("landmark-buy")).isDisabled(), "Aankopen zijn voor een volgende versie.");
+            capture("build/frontier-landmark-" + site.name() + ".png");
+            click("landmark-close");
+        }
+        check(session.state().time().value().equals(time), "Plekken bekijken kost geen tijd.");
+        check(session.state().player().money() == cash && session.state().player().stamina() == energy,
+            "Plekken bekijken kost geen geld of energie.");
+        click("map-center");
     }
     private void verifyDragging() {
         ScrollPane map = stage().getRoot().findActor("world-map");

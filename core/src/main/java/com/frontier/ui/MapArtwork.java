@@ -2,17 +2,17 @@ package com.frontier.ui;
 
 import com.badlogic.gdx.graphics.*;
 import com.frontier.model.Location;
+import com.frontier.model.WorldMap;
 import java.util.Random;
 
 /** Een getekende streekkaart met bos, mijn, dorpsstraten en boerenland. */
 final class MapArtwork {
-    static final int WIDTH = 800, HEIGHT = 440;
+    static final int WIDTH = WorldMap.REGION_WIDTH, HEIGHT = WorldMap.REGION_HEIGHT;
     private final Pixmap p = new Pixmap(WIDTH, HEIGHT, Pixmap.Format.RGBA8888);
     private final Random random = new Random(1880);
     private MapArtwork() {}
-    static Texture create() {
-        MapArtwork art = new MapArtwork(); art.paint();
-        Texture texture = new Texture(art.p); art.p.dispose(); return texture;
+    static Pixmap createRegion() {
+        MapArtwork art = new MapArtwork(); art.paint(); return art.p;
     }
     private void color(String hex) { p.setColor(Color.valueOf(hex)); }
     private void paint() {
@@ -36,12 +36,10 @@ final class MapArtwork {
             color("8b965c"); p.drawLine(x, y, x - 2, y - 4); p.drawLine(x, y, x + 2, y - 5);
             if (i % 4 == 0) { color("a28b64"); ellipse(x + 4, y, 4, 2, true); }
         }
-        // Kompasroos en een dubbele papieren rand.
+        // Kompasroos van de centrale streek.
         color("79623f"); p.drawCircle(49, 379, 21); p.drawCircle(49, 379, 24);
         p.fillTriangle(49, 349, 43, 379, 55, 379); p.drawLine(19, 379, 79, 379); p.drawLine(49, 379, 49, 409);
         color("ead8a5"); p.fillTriangle(49, 409, 44, 379, 49, 379);
-        color("6f5436"); p.drawRectangle(3, 3, WIDTH - 6, HEIGHT - 6);
-        p.drawRectangle(6, 6, WIDTH - 12, HEIGHT - 12);
     }
     private int riverX(int y) { return 381 + (int) (Math.sin(y / 55.0) * 40); }
     private void river() {
