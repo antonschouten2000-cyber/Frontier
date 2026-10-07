@@ -25,7 +25,17 @@ class InventorySaveTest {
             """);
         SaveManager saves = new SaveManager(file); GameState loaded = saves.load();
         assertEquals(0, loaded.inventory().totalCount()); assertEquals("Reiziger", loaded.player().name());
-        saves.save(loaded); assertTrue(Files.readString(file).contains("\"version\": 2"));
+        saves.save(loaded); assertTrue(Files.readString(file).contains("\"version\": 3"));
+    }
+    @Test void versionTwoSaveRetainsInventoryWithoutCreatingATimer() throws IOException {
+        Path file = directory.resolve("save.json");
+        Files.writeString(file, """
+            {"version":2,"player":"Reiziger","money":20,"level":1,"xp":0,"stamina":100,
+             "location":"RED_CREEK","dateTime":"1880-04-01T08:00","inventory":{"WOOD":2}}
+            """);
+        SaveManager saves = new SaveManager(file); GameState loaded = saves.load();
+        assertEquals(2, loaded.inventory().count(Item.WOOD)); assertNull(loaded.activeWork());
+        saves.save(loaded); assertEquals(2, saves.load().inventory().count(Item.WOOD));
     }
     @ParameterizedTest @ValueSource(strings = {"null", "[]", "{\"COFFEE\":0}", "{\"COAT\":-1}",
         "{\"UNKNOWN\":1}", "{\"HAT\":1.5}", "{\"ORE\":\"2\"}", "{\"KNIFE\":2147483648}",

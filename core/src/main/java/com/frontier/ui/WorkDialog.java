@@ -3,44 +3,62 @@ package com.frontier.ui;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.frontier.logic.GameSession;
 import com.frontier.logic.LootManager;
-import com.frontier.model.Job;
+import com.frontier.model.*;
+import java.util.EnumMap;
+import java.util.Locale;
 import java.util.function.Consumer;
 
 final class WorkDialog extends Dialog {
-    WorkDialog(Skin skin, GameSession game, Job job, Consumer<String> onResult) {
-        super(job.name(), skin);
-        getContentTable().pad(22);
-        Table details = new Table(); details.defaults().pad(7);
-        row(details, skin, "Locatie", job.location().displayName());
-        row(details, skin, "Opbrengst", "$" + (job.basePay() - job.payVariation()) + " tot $" + (job.basePay() + job.payVariation()));
-        row(details, skin, "Ervaring", "+" + job.xp());
-        row(details, skin, "Energie voor werk", job.staminaCost() + " punten");
-        row(details, skin, "Duur van het werk", Ui.duration(job.minutes()));
-        int travel = game.state().location().travelMinutesTo(job.location());
-        row(details, skin, "Reistijd erheen", travel == 0 ? "0 min (je bent hier)" : Ui.duration(travel));
-        row(details, skin, "Energie voor de reis", game.state().location().travelStaminaTo(job.location()) + " punten");
-        row(details, skin, "Kans op een vondst", LootManager.FIND_CHANCE_PERCENT + "% per afgeronde klus");
-        details.setName("work-details");
-        getContentTable().add(details).width(510).row();
-        String reason = game.workBlockReason(job);
-        Label note = new Label(reason.isEmpty() ? "Je houdt genoeg energie over voor de terugweg naar Red Creek." : reason, skin, "muted");
-        note.setWrap(true); getContentTable().add(note).width(510).padTop(14).row();
-        button("Terug", false);
-        button(travel == 0 ? "Aan het werk" : "Reizen en werken", true);
-        Ui.nameDialogButtons(this, "work-cancel", "work-confirm");
-        ((TextButton) getButtonTable().getChildren().get(1)).setDisabled(!reason.isEmpty());
-        getButtonTable().pad(16);
-        for (Cell<?> cell : getButtonTable().getCells()) cell.minWidth(160).height(44).pad(6);
-        this.onResult = onResult; this.game = game; this.job = job;
-    }
     private final Consumer<String> onResult;
     private final GameSession game;
     private final Job job;
-    @Override protected void result(Object value) {
-        if (Boolean.TRUE.equals(value)) onResult.accept(game.work(job));
+    private final Skin skin;
+    private final Table details = new Table();
+    private final Label note;
+    private final EnumMap<WorkDuration, TextButton> choices = new EnumMap<>(WorkDuration.class);
+    private WorkDuration selected = WorkDuration.LONG;
+    WorkDialog(Skin skin, GameSession game, Job job, Consumer<String> onResult) {
+        super(job.name(), skin); this.skin = skin; this.game = game; this.job = job; this.onResult = onResult;
+        getContentTable().pad(22);
+        getContentTable().add(new Label("Kies hoelang je wilt werken (echte wachttijd).", skin, "accent")).left().padBottom(12).row();
+        Table durations = new Table();
+        for (WorkDuration duration : WorkDuration.values()) {
+            TextButton choice = Ui.button(skin, duration.displayName(), "work-duration-" + duration.name(), () -> {
+                selected = duration; refresh();
+            });
+            choices.put(duration, choice); durations.add(choice).width(164).height(42).padRight(6);
+        }
+        getContentTable().add(durations).padBottom(12).row();
+        details.setName("work-details"); getContentTable().add(details).width(510).row();
+        note = new Label("", skin, "muted"); note.setWrap(true);
+        getContentTable().add(note).width(510).padTop(14).row();
+        button("Terug", false);
+        button(game.state().location() == job.location() ? "Aan het werk" : "Reizen en werken", true);
+        Ui.nameDialogButtons(this, "work-cancel", "work-confirm"); getButtonTable().pad(16);
+        for (Cell<?> cell : getButtonTable().getCells()) cell.minWidth(160).height(44).pad(6);
+        refresh();
     }
-    private static void row(Table table, Skin skin, String name, String value) {
-        table.add(new Label(name, skin, "muted")).left().expandX();
-        table.add(new Label(value, skin)).right().row();
+    private void refresh() {
+        choices.forEach((duration, choice) -> choice.setStyle(skin.get(duration == selected ? "selected" : "default", TextButton.TextButtonStyle.class)));
+        details.clearChildren(); details.defaults().pad(5);
+        row("Locatie", job.location().displayName());
+        row("Opbrengst", "$" + job.scaledPay(job.basePay() - job.payVariation(), selected) + " tot $" + job.scaledPay(job.basePay() + job.payVariation(), selected));
+        row("Ervaring", "+" + job.xp(selected));
+        row("Energie voor werk", job.staminaCost(selected) + " punten");
+        row("Duur van het werk", selected.displayName());
+        int travel = game.state().location().travelMinutesTo(job.location());
+        row("Reistijd erheen", travel == 0 ? "0 min (je bent hier)" : Ui.duration(travel));
+        row("Energie voor de reis", game.state().location().travelStaminaTo(job.location()) + " punten");
+        row("Kans op een vondst", String.format(Locale.forLanguageTag("nl-NL"), "%.3f%%", LootManager.chancePercent(selected)));
+        String reason = game.workBlockReason(job, selected);
+        note.setText(reason.isEmpty() ? "De voortgangsbalk blijft zichtbaar na het sluiten van dit venster. Reizen kost alleen in-game tijd." : reason);
+        ((TextButton) getButtonTable().getChildren().get(1)).setDisabled(!reason.isEmpty());
+    }
+    @Override protected void result(Object value) {
+        if (Boolean.TRUE.equals(value)) onResult.accept(game.startWork(job, selected));
+    }
+    private void row(String name, String value) {
+        details.add(new Label(name, skin, "muted")).left().expandX();
+        details.add(new Label(value, skin)).right().row();
     }
 }

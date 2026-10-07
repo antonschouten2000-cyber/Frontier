@@ -53,7 +53,7 @@ final class MapArtwork {
     }
     private void trails() {
         for (Location target : Location.values()) {
-            if (target == Location.RED_CREEK) continue;
+            if (target == Location.RED_CREEK || target.ordinal() > Location.LONELY_RANCH.ordinal()) continue;
             int sx = x(Location.RED_CREEK), sy = y(Location.RED_CREEK), tx = x(target), ty = y(target);
             for (int i = 0; i <= 200; i++) {
                 double t = i / 200.0;

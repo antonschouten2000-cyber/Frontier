@@ -7,6 +7,7 @@ public final class GameState {
     private final GameTime time;
     private Location location;
     private final Inventory inventory;
+    private ActiveWork activeWork;
     public GameState() { this(new Player(), new GameTime(), Location.RED_CREEK); }
     public GameState(Player player, GameTime time, Location location) {
         this(player, time, location, new Inventory());
@@ -18,6 +19,12 @@ public final class GameState {
         this.location = Objects.requireNonNull(location);
         if (player.stamina() < location.travelStaminaTo(Location.RED_CREEK))
             throw new IllegalArgumentException("Te weinig energie voor de terugweg naar Red Creek.");
+    }
+    public ActiveWork activeWork() { return activeWork; }
+    public void setActiveWork(ActiveWork work) {
+        if (work != null && work.job().location() != location)
+            throw new IllegalArgumentException("Werklocatie komt niet overeen met de spelerlocatie.");
+        activeWork = work;
     }
     public Inventory inventory() { return inventory; }
     public Player player() { return player; }

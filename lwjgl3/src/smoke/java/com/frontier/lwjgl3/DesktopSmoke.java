@@ -14,10 +14,13 @@ import com.frontier.ui.GameScreen;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.time.*;
 
 /** Echte desktopbediening, met een geïsoleerd tijdelijk opslagbestand. */
 public final class DesktopSmoke extends Game {
-    private final GameSession session = new GameSession(new Random(1880));
+    private final TestClock clock = new TestClock();
+    private final GameSession session = new GameSession(new Random(1880), clock);
+    private boolean autoFinishWork = true;
     private final SaveManager saves;
     private Throwable failure;
     private int frame;
@@ -34,7 +37,7 @@ public final class DesktopSmoke extends Game {
             new Lwjgl3Application(app, config);
             if (app.failure != null) throw new AssertionError("Desktopcontrole mislukt", app.failure);
             check(app.frame >= 20, "Alle stappen moeten zijn uitgevoerd.");
-            System.out.println("DESKTOP SMOKE PASSED: glad lettertype, uitgezoomde kaart en meegroeiende interface, vier toekomstige bezittingen, kaart slepen, statusbalken, stadsgebouwen, herberg, achttien klussen, inventaris, instellingen, opslag, formaat en afsluiten.");
+            System.out.println("DESKTOP SMOKE PASSED: glad lettertype, uitgezoomde kaart en meegroeiende interface, vier toekomstige bezittingen, kaart slepen, statusbalken, stadsgebouwen, herberg, 42 klussen met echte werktimers, inventaris, instellingen, opslag, formaat en afsluiten.");
         } finally { Files.deleteIfExists(directory.resolve("save.json")); Files.deleteIfExists(directory); }
     }
     @Override public void create() { setScreen(new GameScreen(session, saves)); }
@@ -82,14 +85,15 @@ public final class DesktopSmoke extends Game {
                 check(((TextButton) stage().getRoot().findActor("town")).isDisabled(), "Je moet eerst naar de stad reizen.");
                 click("travel-PINE_FOREST");
                 check(session.state().player().stamina() == 61, "Reis en werk verbruiken samen 39 energie.");
-                check(session.state().time().value().equals(GameTime.START.plusMinutes(292)), "Reistijd en werkduur kloppen samen.");
+                check(session.state().time().value().equals(GameTime.START.plusMinutes(172)), "Reistijd en gekozen uur werk kloppen samen.");
                 session.state().player().reward(0, 30); // Exacte grens naar niveau 2 voor de weergavetest.
                 click("travel-PINE_FOREST");
                 check(session.state().player().level() == 2, "De fixture bereikt niveau 2.");
                 check(((ProgressBar) stage().getRoot().findActor("xp-bar")).getValue() == 0, "Ervaringsbalk begint opnieuw na niveauverhoging.");
             } else if (frame == 4) {
                 goHomeAndRest();
-                // Alle achttien werkzaamheden via hun menu uitvoeren.
+                verifyDurationChoices();
+                // Alle werkzaamheden via hun menu uitvoeren met een vervangbare testklok.
                 for (Location location : Location.values()) {
                     for (Job job : session.jobsAt(location)) {
                         click("travel-" + location.name());
@@ -125,6 +129,7 @@ public final class DesktopSmoke extends Game {
                 check(session.state().inventory().totalCount() == 0, "Nieuw spel leegt inventaris.");
                 check(session.state().time().value().equals(GameTime.START), "Nieuw spel herstelt de klok.");
             } else if (frame == 8) {
+                check(!labelText(stage().getRoot()).contains("Sleep de kaart"), "De sleepinstructie is verwijderd.");
                 capture("build/frontier-desktop.png");
                 click("travel-PINE_FOREST"); click("job-wood");
                 check(stage().getRoot().findActor("work-confirm") != null, "Werkmenu moet zichtbaar zijn voor de opname.");
@@ -169,7 +174,40 @@ public final class DesktopSmoke extends Game {
         stage.stageToScreenCoordinates(point);
         stage.touchDown(Math.round(point.x), Math.round(point.y), 0, Input.Buttons.LEFT);
         stage.touchUp(Math.round(point.x), Math.round(point.y), 0, Input.Buttons.LEFT);
-        for (int i = 0; i < 4; i++) stage.act(.5f); // Rond opeenvolgende dialooganimaties af zonder de spelklok te veranderen.
+        for (int i = 0; i < 4; i++) stage.act(.5f); // Dialooganimaties veranderen de echte testklok niet.
+        if (name.equals("work-confirm") && autoFinishWork && session.isWorking()) {
+            clock.advanceSeconds(session.state().activeWork().duration().seconds());
+            getScreen().render(0); // De game, niet de klikhelper, rondt de verstreken klus af.
+        }
+    }
+    private void verifyDurationChoices() {
+        goHomeAndRest(); click("travel-PINE_FOREST"); click("job-wood");
+        for (WorkDuration duration : WorkDuration.values()) {
+            click("work-duration-" + duration.name());
+            check(labelText(stage().getRoot().findActor("work-details")).contains(duration.displayName()), "De details veranderen met de werktijd.");
+        }
+        click("work-duration-QUICK"); autoFinishWork = false;
+        int cash = session.state().player().money(); click("work-confirm");
+        check(session.isWorking(), "De klus start een echte timer.");
+        check(session.state().player().money() == cash, "Beloningen komen niet meteen.");
+        check(((TextButton) stage().getRoot().findActor("travel")).isDisabled(), "Reizen is geblokkeerd tijdens werk.");
+        clock.advanceSeconds(7); getScreen().render(0);
+        ProgressBar bar = stage().getRoot().findActor("active-work-bar");
+        check(bar.isVisible() && Math.abs(bar.getValue() - 7f / 15) < .01f, "De voortgangsbalk volgt de echte werktijd.");
+        capture("build/frontier-active-work.png");
+        click("settings"); click("save-game"); click("settings"); click("load-game");
+        check(session.isWorking() && session.workSecondsRemaining() == 8, "Opslaan en laden hervatten de resterende tijd.");
+        clock.advanceSeconds(8); getScreen().render(0);
+        check(!session.isWorking(), "Een klus van vijftien seconden is klaar na vijftien seconden.");
+        check(session.state().player().money() > cash, "Een korte klus levert geld op.");
+        autoFinishWork = true; goHomeAndRest();
+    }
+    private static final class TestClock extends Clock {
+        private Instant now = Instant.parse("2026-10-07T12:00:00Z");
+        void advanceSeconds(long seconds) { now = now.plusSeconds(seconds); }
+        @Override public ZoneId getZone() { return ZoneOffset.UTC; }
+        @Override public Clock withZone(ZoneId zone) { return Clock.fixed(now, zone); }
+        @Override public Instant instant() { return now; }
     }
     private void ensureVisible(Actor actor) {
         for (Actor parent = actor.getParent(); parent != null; parent = parent.getParent()) {

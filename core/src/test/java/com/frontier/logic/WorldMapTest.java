@@ -10,11 +10,24 @@ class WorldMapTest {
         assertTrue(WorldMap.HEIGHT > WorldMap.REGION_HEIGHT);
         assertEquals(384, WorldMap.x(Location.OLD_MINE) - WorldMap.x(Location.RED_CREEK), .001);
         assertEquals(.40 * 440, WorldMap.y(Location.PINE_FOREST) - WorldMap.y(Location.RED_CREEK), .001);
-        for (Location location : Location.values()) {
+        for (Location location : new Location[]{Location.RED_CREEK, Location.PINE_FOREST, Location.OLD_MINE, Location.LONELY_RANCH}) {
             assertTrue(WorldMap.x(location) >= WorldMap.REGION_X);
             assertTrue(WorldMap.x(location) <= WorldMap.REGION_X + WorldMap.REGION_WIDTH);
             assertTrue(WorldMap.y(location) >= WorldMap.HEIGHT - WorldMap.REGION_Y - WorldMap.REGION_HEIGHT);
             assertTrue(WorldMap.y(location) <= WorldMap.HEIGHT - WorldMap.REGION_Y);
+        }
+    }
+    @Test void newWorkplacesAreInsideTheWorldAndReachableWithReturnReserve() {
+        assertEquals(3200, WorldMap.WIDTH); assertEquals(1920, WorldMap.HEIGHT);
+        GameSession game = new GameSession();
+        for (Location location : Location.values()) {
+            assertTrue(WorldMap.x(location) >= 150 && WorldMap.x(location) < WorldMap.WIDTH - 150);
+            assertTrue(WorldMap.y(location) >= 150 && WorldMap.y(location) < WorldMap.HEIGHT - 150);
+            for (Job job : game.jobsAt(location)) {
+                game.newGame(); assertEquals("", game.workBlockReason(job, WorkDuration.LONG));
+                game.startWork(job, WorkDuration.LONG);
+                assertTrue(game.state().player().stamina() >= location.travelStaminaTo(Location.RED_CREEK));
+            }
         }
     }
     @Test void ghostTownsAndFortAreOutsideOldRegionAndWithinWorld() {

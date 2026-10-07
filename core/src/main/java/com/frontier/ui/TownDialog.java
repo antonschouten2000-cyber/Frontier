@@ -4,6 +4,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.frontier.logic.GameSession;
 import com.frontier.model.Location;
+import com.frontier.model.TimeRules;
 import java.util.function.Consumer;
 
 /** Een apart in-game venster; alleen de herberg voert een spelactie uit. */
@@ -26,7 +27,7 @@ final class TownDialog extends Dialog {
         description = new Label("Welkom in Red Creek. Hier kun je gebouwen bezoeken en uitrusten in de herberg.", skin);
         description.setWrap(true); description.setName("town-description");
         summary = new Label("", skin, "muted"); summary.setName("town-summary");
-        sleep = Ui.button(skin, "Acht uur slapen", "sleep", () -> {
+        sleep = Ui.button(skin, TimeRules.SLEEP_HOURS + " uur slapen", "sleep", () -> {
             onAction.accept(game.sleep()); updateSummary();
         });
         Table info = new Table(); info.add(description).width(705).height(72).left();

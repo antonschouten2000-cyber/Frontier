@@ -5,6 +5,7 @@ import com.badlogic.gdx.utils.JsonReader;
 import com.badlogic.gdx.utils.JsonValue;
 import com.badlogic.gdx.utils.JsonWriter;
 import com.frontier.model.*;
+import com.frontier.logic.JobManager;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
@@ -23,7 +24,12 @@ public final class SaveManager {
     public void save(GameState state) throws IOException {
         SaveData data = new SaveData();
         Player player = state.player();
-        data.version = 2;
+        data.version = 3;
+        if (state.activeWork() != null) {
+            ActiveWork work = state.activeWork(); data.activeWork = new WorkData();
+            data.activeWork.jobId = work.job().id(); data.activeWork.duration = work.duration().name();
+            data.activeWork.startedAt = work.startedAt(); data.activeWork.endsAt = work.endsAt();
+        }
         data.inventory = new java.util.LinkedHashMap<>();
         state.inventory().contents().forEach((item, count) -> data.inventory.put(item.name(), count));
         data.player = player.name();
@@ -67,9 +73,9 @@ public final class SaveManager {
                 if (!root.get(field).isString()) throw new IllegalArgumentException("Ongeldige tekst: " + field);
             }
             int version = root.getInt("version");
-            if (version != 1 && version != 2) throw new IllegalArgumentException("Deze opslagversie wordt niet ondersteund.");
+            if (version != 1 && version != 2 && version != 3) throw new IllegalArgumentException("Deze opslagversie wordt niet ondersteund.");
             Inventory inventory = new Inventory();
-            if (version == 2) {
+            if (version >= 2) {
                 JsonValue entries = root.get("inventory");
                 if (entries == null || !entries.isObject()) throw new IllegalArgumentException("Inventaris ontbreekt of is ongeldig.");
                 java.util.Set<Item> seen = new java.util.HashSet<>();
@@ -82,8 +88,19 @@ public final class SaveManager {
             }
             Player player = new Player(root.getString("player").equals("Traveler") ? "Reiziger" : root.getString("player"), root.getInt("money"),
                 root.getInt("stamina"), root.getInt("xp"), root.getInt("level"));
-            return new GameState(player, new GameTime(LocalDateTime.parse(root.getString("dateTime"))),
+            GameState loaded = new GameState(player, new GameTime(LocalDateTime.parse(root.getString("dateTime"))),
                 Location.valueOf(root.getString("location")), inventory);
+            if (version >= 3 && root.has("activeWork") && !root.get("activeWork").isNull()) {
+                JsonValue work = root.get("activeWork");
+                if (!work.isObject() || !work.has("jobId") || !work.has("duration")
+                    || !work.has("startedAt") || !work.has("endsAt")
+                    || !work.get("jobId").isString() || !work.get("duration").isString()
+                    || !work.get("startedAt").isLong() || !work.get("endsAt").isLong())
+                    throw new IllegalArgumentException("Ongeldige lopende klus.");
+                loaded.setActiveWork(new ActiveWork(JobManager.byId(work.getString("jobId")),
+                    WorkDuration.valueOf(work.getString("duration")), work.getLong("startedAt"), work.getLong("endsAt")));
+            }
+            return loaded;
         } catch (RuntimeException e) {
             throw new IOException("Dit spel kan niet worden geladen: " + e.getMessage(), e);
         }
@@ -92,5 +109,10 @@ public final class SaveManager {
         public int version, money, level, xp, stamina;
         public String player, location, dateTime;
         public java.util.Map<String, Integer> inventory;
+        public WorkData activeWork;
+    }
+    public static final class WorkData {
+        public String jobId, duration;
+        public long startedAt, endsAt;
     }
 }

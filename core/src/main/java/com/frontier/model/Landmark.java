@@ -2,13 +2,13 @@ package com.frontier.model;
 
 /** Toekomstige bezittingen zijn kaartpunten, geen reis- of werklocaties. */
 public enum Landmark {
-    DRY_WELL("Droge Bron", "Spookdorp", 235, 795,
+    DRY_WELL("Droge Bron", "Spookdorp", 300, 1650,
         "Een verlaten dorp rond een opgedroogde waterput. Lege huizen en verweerde hekken wachten op een nieuwe eigenaar."),
-    SAND_VALLEY("Zandvallei", "Spookdorp", 1370, 765,
+    SAND_VALLEY("Zandvallei", "Spookdorp", 2850, 1560,
         "Een verlaten nederzetting in de zandheuvels. Van de oude handelsstraat zijn alleen houten gevels over."),
-    LOST_CREEK("Verloren Kreek", "Spookdorp", 225, 155,
+    LOST_CREEK("Verloren Kreek", "Spookdorp", 350, 300,
         "Een stil dorp aan een oude kreek. De bewoners zijn vertrokken; het erf en de gebouwen staan leeg."),
-    SANDSTONE_FORT("Fort Zandsteen", "Fort", 1350, 165,
+    SANDSTONE_FORT("Fort Zandsteen", "Fort", 2750, 380,
         "Een verlaten fort met palissades, wachttorens en een binnenplaats. Een mogelijke uitvalsbasis voor een toekomstige eigenaar.");
     private final String name, kind, description;
     private final int x, y;

@@ -15,12 +15,14 @@ public final class GameScreen extends ScreenAdapter {
     private final SaveManager saves;
     private final Skin skin = FrontierSkin.create();
     private final Stage stage = new Stage(new ScreenViewport());
+    private final WorkProgress workProgress = new WorkProgress(skin);
     private final ActionBar actionBar = new ActionBar(skin);
     private final Label locationTitle = label("", "accent"), locationInfo = label("", "muted");
     private final Label status = label("Welkom in Red Creek. Twintig dollar en een nieuw begin. Kies een locatie of zoek een klus.", "default");
     private final Table jobs = new Table();
     private final TextButton travel, town, inventory;
     private final MapPanel map;
+    private Cell<WorkProgress> workProgressCell;
     private Location selected = Location.RED_CREEK;
 
     public GameScreen(GameSession game, SaveManager saves) {
@@ -38,17 +40,18 @@ public final class GameScreen extends ScreenAdapter {
         root.add(heading).growX().padBottom(16).row();
         root.add(actionBar).growX().padBottom(14).row();
         Table content = new Table(), territory = new Table();
-        territory.add(label("HET GEBIED ROND RED CREEK", "accent")).left().growX().padBottom(10).row();
+        territory.add(label("DE FRONTIER", "accent")).left().growX().padBottom(10).row();
         territory.add(map).minSize(0, 0).prefSize(800, 380).grow().row();
         Table mapTools = new Table();
-        mapTools.add(label("Sleep de kaart met de linkermuisknop.", "muted")).left().expandX();
+        mapTools.add().expandX();
         mapTools.add(button("Kaart centreren", "map-center", map::center)).width(180).height(34);
         territory.add(mapTools).growX().padTop(10);
         content.add(territory).minWidth(0).grow();
         Table activities = new Table(); activities.setBackground(skin.getDrawable("card")); activities.pad(16);
         activities.add(locationTitle).left().growX().padBottom(10).row();
         activities.add(locationInfo).width(254).height(64).left().padBottom(8).row();
-        activities.add(travel).growX().height(40).padBottom(16).row();
+        activities.add(travel).growX().height(40).padBottom(12).row();
+        workProgressCell = activities.add(workProgress).growX().height(0); activities.row();
         ScrollPane jobList = new ScrollPane(jobs, skin); jobList.setFadeScrollBars(false);
         jobList.setScrollingDisabled(true, false); jobList.setName("job-list");
         activities.add(jobList).width(254).minHeight(100).prefHeight(200).growY().padBottom(12).row();
@@ -111,9 +114,18 @@ public final class GameScreen extends ScreenAdapter {
             case PINE_FOREST -> "Dennen, kronkelende paden en verlaten houthakkersplekken.";
             case OLD_MINE -> "Een oude schacht tussen rotsen en achtergelaten mijnkarren.";
             case LONELY_RANCH -> "Een afgelegen erf met schuren, akkers en houten hekken.";
+            case WILLOW_FARM -> "Een melkboerderij met stallen, kippenrennen en wilgen.";
+            case SUNRISE_FARM -> "Maisvelden en een boomgaard rond een zonnig erf.";
+            case RIVER_FARM -> "Groenteakkers en irrigatiekanalen langs de rivier.";
+            case COTTON_FARM -> "Katoenvelden, een opslagschuur en stapels balen.";
+            case NORTH_WOODS -> "Een uitgestrekt dennenwoud met een houthakkerskamp.";
+            case QUARRY -> "Een steengroeve met grindhopen en leisteen.";
+            case RIVERBANK -> "Rietkragen, visnetten en een kleine aanlegsteiger.";
+            case TRADING_POST -> "Een handelspost met een magazijn en vrachtkisten.";
         });
         travel.setText(selected == game.state().location() ? "Je bent hier" : "Reizen naar deze locatie");
-        travel.setDisabled(selected == game.state().location());
+        travel.setDisabled(selected == game.state().location() || game.isWorking());
+        workProgressCell.height(game.isWorking() ? 92 : 0); workProgress.refresh(game);
         jobs.clearChildren();
         if (selected == Location.RED_CREEK) {
             Label note = label(game.state().location() == Location.RED_CREEK
@@ -128,11 +140,16 @@ public final class GameScreen extends ScreenAdapter {
         }
         inventory.setText("Inventaris (" + game.state().inventory().totalCount() + ")");
         town.setVisible(selected == Location.RED_CREEK);
-        town.setDisabled(game.state().location() != Location.RED_CREEK);
+        town.setDisabled(game.state().location() != Location.RED_CREEK || game.isWorking());
         map.refresh(game, selected);
     }
     @Override public void show() { Gdx.input.setInputProcessor(stage); }
-    @Override public void render(float delta) { ScreenUtils.clear(.10f, .07f, .04f, 1); stage.act(Math.min(delta, 1 / 30f)); stage.draw(); }
+    @Override public void render(float delta) {
+        ScreenUtils.clear(.10f, .07f, .04f, 1);
+        String completed = game.updateWork();
+        if (!completed.isEmpty()) message(completed);
+        workProgress.refresh(game); stage.act(Math.min(delta, 1 / 30f)); stage.draw();
+    }
     @Override public void resize(int width, int height) {
         if (width <= 0 || height <= 0) return;
         ScreenViewport viewport = (ScreenViewport) stage.getViewport();

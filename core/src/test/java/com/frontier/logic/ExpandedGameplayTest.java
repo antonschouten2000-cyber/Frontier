@@ -9,15 +9,15 @@ import java.util.random.RandomGenerator;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ExpandedGameplayTest {
-    @Test void eighteenDistinctJobsAreOutsideTown() {
+    @Test void fortyTwoDistinctJobsAreOutsideTown() {
         GameSession game = new GameSession(); Set<String> ids = new HashSet<>();
         for (Location location : Location.values()) {
-            assertEquals(location == Location.RED_CREEK ? 0 : 6, game.jobsAt(location).size());
+            assertEquals(location == Location.RED_CREEK ? 0 : location.ordinal() <= Location.LONELY_RANCH.ordinal() ? 6 : 3, game.jobsAt(location).size());
             for (Job job : game.jobsAt(location)) {
                 assertEquals(location, job.location()); assertTrue(ids.add(job.id()));
             }
         }
-        assertEquals(18, ids.size()); assertNull(game.currentJob());
+        assertEquals(42, ids.size()); assertNull(game.currentJob());
         assertFalse(game.workBlockReason().isEmpty()); game.work();
         assertEquals(20, game.state().player().money()); assertEquals(100, game.state().player().stamina());
         assertEquals(GameTime.START, game.state().time().value());
