@@ -22,7 +22,9 @@ public final class LootManager {
         int category = random.nextInt(100);
         if (category < 60) return Optional.of(switch (location) {
             case PINE_FOREST, NORTH_WOODS -> Item.WOOD;
-            case OLD_MINE, QUARRY -> Item.ORE;
+            case OLD_MINE -> Item.ORE;
+            case QUARRY -> Item.STONE;
+            case COTTON_FARM -> Item.COTTON;
             default -> Item.COFFEE;
         });
         Item[] pool = category < 90 ? new Item[]{Item.HAT, Item.BOOTS, Item.COAT}

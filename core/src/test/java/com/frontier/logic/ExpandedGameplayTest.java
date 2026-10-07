@@ -77,7 +77,7 @@ class ExpandedGameplayTest {
     }
     @Test void successfulJobsAddAndStackLootAndNewGameClearsIt() {
         GameSession game = new GameSession(new Rolls(0, 0, 0, 0));
-        game.travel(Location.PINE_FOREST); game.work(); game.work(); assertEquals(2, game.state().inventory().count(Item.WOOD));
+        game.travel(Location.PINE_FOREST); game.work(); game.work(); assertEquals(26, game.state().inventory().count(Item.WOOD)); // Twee vondsten plus tweemaal twaalf bouwmateriaal.
         game.newGame(); assertEquals(0, game.state().inventory().totalCount());
     }
     @Test void rejectedJobDoesNotRollLoot() {

@@ -25,7 +25,8 @@ public final class DesktopSmoke extends Game {
     private Throwable failure;
     private int frame;
     private Map<Item, Integer> savedInventory;
-    private int savedMoney;
+    private int savedMoney, savedBankMoney;
+    private Map<Building, Integer> savedBuildingLevels;
     private java.util.List<Telegram> savedTelegrams;
     private DesktopSmoke(Path directory) { saves = new SaveManager(directory.resolve("save.json")); }
     public static void main(String[] args) throws Exception {
@@ -38,7 +39,7 @@ public final class DesktopSmoke extends Game {
             new Lwjgl3Application(app, config);
             if (app.failure != null) throw new AssertionError("Desktopcontrole mislukt", app.failure);
             check(app.frame >= 20, "Alle stappen moeten zijn uitgevoerd.");
-            System.out.println("DESKTOP SMOKE PASSED: glad lettertype, uitgezoomde kaart en meegroeiende interface, vier toekomstige bezittingen, kaart slepen, statusbalken, stadsgebouwen, herberg, 42 klussen met echte werktimers, inventaris, instellingen, opslag, formaat en afsluiten.");
+            System.out.println("DESKTOP SMOKE PASSED: glad lettertype, uitgezoomde kaart en meegroeiende interface, vier toekomstige bezittingen, kaart slepen, statusbalken, stadsgebouwen, gebouwupgrades, bank, winkels en itemiconen, herberg, 42 klussen met echte werktimers, inventaris, instellingen, opslag, formaat en afsluiten.");
         } finally { Files.deleteIfExists(directory.resolve("save.json")); Files.deleteIfExists(directory); }
     }
     @Override public void create() { setScreen(new GameScreen(session, saves)); }
@@ -64,6 +65,9 @@ public final class DesktopSmoke extends Game {
                 verifyLandmarks();
                 click("town");
                 var townTime = session.state().time().value();
+                click("building-TOWN_HALL"); click("upgrade-building");
+                check(((TextButton) stage().getRoot().findActor("upgrade-confirm")).isDisabled(), "Een upgrade zonder geld en materiaal is geblokkeerd.");
+                click("upgrade-cancel");
                 for (String building : new String[]{"GUNSMITH", "TOWN_HALL", "TAILOR", "BANK", "INN"}) click("building-" + building);
                 check(session.state().time().value().equals(townTime), "Gebouwen bekijken kost geen tijd.");
                 check(stage().getRoot().findActor("job-wood") == null, "Het stadsvenster biedt geen arbeid.");
@@ -114,20 +118,25 @@ public final class DesktopSmoke extends Game {
                 check(((TextButton) stage().getRoot().findActor("work-confirm")).isDisabled(), "Te moe: bevestigen is uitgeschakeld.");
                 click("work-cancel"); goHomeAndRest();
                 check(session.state().inventory().totalCount() > 0, "Werkzaamheden moeten daadwerkelijk vondsten opleveren.");
+                verifyTownEconomy();
                 // Aanvullende fixtures zorgen dat alle filter- en beschrijvingsknoppen worden aangeklikt.
                 session.state().inventory().add(Item.REVOLVER); session.state().inventory().add(Item.COAT); session.state().inventory().add(Item.WOOD);
                 click("inventory"); click("inventory-WEAPON"); click("item-REVOLVER");
+                check(stage().getRoot().findActor("icon-item-REVOLVER") instanceof Image, "De inventaris toont een echt voorwerpicoon.");
                 check(labelText(stage().getRoot()).contains("zesschieter"), "Beschrijving van het wapen verschijnt.");
                 click("inventory-CLOTHING"); click("item-COAT"); click("inventory-PRODUCT"); click("item-WOOD");
                 click("inventory-all");
             } else if (frame == 6) {
                 capture("build/frontier-inventory.png"); click("inventory-close");
                 click("settings"); click("save-game"); savedMoney = session.state().player().money();
+                savedBankMoney = session.state().player().bankMoney(); savedBuildingLevels = session.state().town().levels();
                 savedInventory = new EnumMap<>(session.state().inventory().contents());
                 savedTelegrams = session.state().mailbox().messages();
                 click("travel-PINE_FOREST"); click("job-wood"); click("work-confirm");
                 click("settings"); click("load-game");
                 check(session.state().player().money() == savedMoney, "Laden herstelt geld.");
+                check(session.state().player().bankMoney() == savedBankMoney, "Laden herstelt het banksaldo.");
+                check(session.state().town().levels().equals(savedBuildingLevels), "Laden herstelt gebouwlevels.");
                 check(session.state().inventory().contents().equals(savedInventory), "Laden herstelt alle voorwerpen.");
                 check(session.state().mailbox().messages().equals(savedTelegrams), "Laden herstelt berichten en leesstatus.");
                 click("settings"); click("new-game"); click("new-cancel");
@@ -135,6 +144,8 @@ public final class DesktopSmoke extends Game {
                 click("settings"); click("new-game"); click("new-confirm");
                 check(session.state().inventory().totalCount() == 0, "Nieuw spel leegt inventaris.");
                 check(session.state().mailbox().size() == 0, "Nieuw spel leegt de berichten.");
+                check(session.state().player().bankMoney() == 0, "Nieuw spel begint zonder bankgeld.");
+                check(session.state().town().levels().values().stream().allMatch(level -> level == 1), "Nieuw spel begint met level 1 gebouwen.");
                 check(session.state().time().value().equals(GameTime.START), "Nieuw spel herstelt de klok.");
             } else if (frame == 8) {
                 check(!labelText(stage().getRoot()).contains("Sleep de kaart"), "De sleepinstructie is verwijderd.");
@@ -146,7 +157,9 @@ public final class DesktopSmoke extends Game {
             else if (frame == 12) {
                 click("job-branches"); click("work-confirm");
                 check(session.state().location() == Location.PINE_FOREST, "Menu werkt ook na verkleinen.");
-                verifyTelegram();
+                verifyTelegram(); goHomeAndRest(); click("town");
+                check(stage().getRoot().findActor("town-window").getHeight() <= stage().getHeight(), "De stad past ook in het kleine venster.");
+                capture("build/frontier-town-small.png"); click("town-close");
             } else if (frame == 14) { capture("build/frontier-desktop-small.png"); Gdx.graphics.setWindowedMode(1920, 1080); }
             else if (frame == 17) {
                 ScrollPane map = stage().getRoot().findActor("world-map");
@@ -168,7 +181,7 @@ public final class DesktopSmoke extends Game {
         var before = session.state().time().value();
         click("town"); click("building-INN"); click("sleep"); click("town-close");
         check(session.state().player().stamina() == 100, "Slapen herstelt alle energie.");
-        check(session.state().time().value().equals(before.plusHours(8)), "Slapen duurt acht uur.");
+        check(session.state().time().value().equals(before.plusMinutes(session.state().town().sleepMinutes())), "Slapen gebruikt de duur van het herberglevel.");
     }
     private void click(String name) {
         Stage stage = stage();
@@ -189,6 +202,42 @@ public final class DesktopSmoke extends Game {
             clock.advanceSeconds(session.state().activeWork().duration().seconds());
             getScreen().render(0); // De game, niet de klikhelper, rondt de verstreken klus af.
         }
+    }
+    private void verifyTownEconomy() {
+        // Bouwmaterialen komen hierboven uit echte klussen; deze fixture laat alle vijf UI-levels testen.
+        session.state().player().reward(5000, 0);
+        for (Item item : new Item[]{Item.WOOD, Item.STONE, Item.ORE, Item.COTTON}) session.state().inventory().add(item, 1000);
+        click("town"); click("building-GUNSMITH"); click("shop-open");
+        check(stage().getRoot().findActor("icon-shop-item-SLINGSHOT") instanceof Image, "Winkelproducten hebben echte iconen.");
+        check(((TextButton) stage().getRoot().findActor("buy-KNIFE")).isDisabled(), "Level 1 verkoopt alleen de katapult.");
+        click("buy-SLINGSHOT"); check(session.state().inventory().count(Item.SLINGSHOT) == 1, "Gekocht wapen komt in de inventaris.");
+        capture("build/frontier-shop-level-one.png"); click("shop-close");
+        click("building-BANK"); click("bank-open");
+        TextField amount = stage().getRoot().findActor("bank-amount"); amount.setText("100"); int cash = session.state().player().money();
+        click("bank-deposit"); check(session.state().player().bankMoney() == 100 && session.state().player().money() == cash - 100, "Storten verplaatst het geld.");
+        amount.setText("40"); click("bank-withdraw"); check(session.state().player().bankMoney() == 60, "Opnemen geeft cash terug.");
+        amount.setText("100000"); click("bank-deposit"); check(session.state().player().bankMoney() == 60, "Ongeldige storting verandert niets.");
+        capture("build/frontier-bank.png"); click("bank-close");
+        for (int target = 2; target <= Building.MAX_LEVEL; target++) {
+            for (Building building : new Building[]{Building.TOWN_HALL, Building.GUNSMITH, Building.TAILOR, Building.INN, Building.BANK}) {
+                click("building-" + building.name()); click("upgrade-building");
+                if (target == 2 && building == Building.TOWN_HALL) {
+                    int before = session.state().player().money(); click("upgrade-cancel");
+                    check(session.state().player().money() == before, "Upgrade annuleren verbruikt niets."); click("upgrade-building");
+                }
+                click("upgrade-confirm"); check(session.state().town().level(building) == target, "Gebouwlevel stijgt via de UI.");
+            }
+        }
+        click("building-GUNSMITH"); click("shop-open"); click("buy-REPEATER");
+        check(session.state().inventory().count(Item.REPEATER) == 1, "Level 5 ontsluit het beste geweer.");
+        capture("build/frontier-shop-level-five.png"); click("shop-close");
+        click("building-TAILOR"); click("shop-open"); click("buy-DUSTER");
+        check(session.state().inventory().count(Item.DUSTER) == 1, "De kledingmaker ontsluit betere kleding.");
+        capture("build/frontier-tailor.png"); click("shop-close");
+        click("building-INN"); var time = session.state().time().value(); click("sleep");
+        check(session.state().time().value().equals(time.plusHours(2)), "Level 5 herberg herstelt energie in twee speluren.");
+        capture("build/frontier-town-upgraded.png"); click("town-close");
+        check(labelText(stage().getRoot().findActor("wallet-hud")).contains("Bank $60"), "De statusbalk toont cash en banksaldo.");
     }
     private void verifyTelegram() {
         int index = session.state().mailbox().size() - 1; Telegram message = session.state().mailbox().messages().get(index);

@@ -9,7 +9,7 @@ final class ActionBar extends Table {
     private final Label player, money, level, experience, energy, time;
     private final ProgressBar xpBar, energyBar;
     ActionBar(Skin skin) {
-        player = new Label("", skin, "accent"); money = new Label("", skin, "accent"); level = new Label("", skin, "accent");
+        player = new Label("", skin, "accent"); money = new Label("", skin, "accent"); money.setName("wallet-hud"); level = new Label("", skin, "accent");
         experience = new Label("", skin); energy = new Label("", skin); time = new Label("", skin, "muted");
         player.setEllipsis(true); player.setName("player-hud"); time.setName("time-hud"); time.setAlignment(Align.right);
         xpBar = new ProgressBar(0, 1, .001f, false, skin, "experience-horizontal"); xpBar.setName("xp-bar");
@@ -18,7 +18,7 @@ final class ActionBar extends Table {
         Table identity = card(skin); identity.add(player).left().row(); identity.add(level).left().padTop(8);
         add(identity).width(150);
         Table wallet = card(skin); wallet.add(new Label("GELD", skin, "muted")).left().row(); wallet.add(money).left().padTop(8);
-        add(wallet).width(115);
+        add(wallet).width(150);
         add(meter(skin, "ERVARING", xpBar, experience)).width(258);
         add(meter(skin, "ENERGIE", energyBar, energy)).width(218);
         Table clock = card(skin); clock.add(time).expandX().right(); add(clock).expandX().fillX().padRight(0);
@@ -30,7 +30,7 @@ final class ActionBar extends Table {
         t.add(stack).growX().height(25); return t;
     }
     void refresh(GameState state) {
-        Player p = state.player(); player.setText(p.name()); level.setText("Niveau " + p.level()); money.setText("$ " + p.money());
+        Player p = state.player(); player.setText(p.name()); level.setText("Niveau " + p.level()); money.setText("Cash $" + p.money() + "\nBank $" + p.bankMoney());
         long lower = (long) p.level() * (p.level() - 1) * 25;
         long current = p.xp() - lower, required = p.nextLevelXp() - lower;
         xpBar.setValue(current / (float) required); experience.setText(current + " / " + required);

@@ -55,7 +55,7 @@ public final class JobManager {
         Map.entry(Location.QUARRY, List.of(
             new Job("gravel", Location.QUARRY, "Grind zeven", 13, 2, 12, 60, 15),
             new Job("slate", Location.QUARRY, "Leisteen sorteren", 15, 2, 14, 60, 18),
-            new Job("markstone", Location.QUARRY, "Bouwstenen markeren", 12, 1, 10, 60, 13))),
+            new Job("markstone", Location.QUARRY, "Steen houwen", 12, 1, 10, 60, 13))),
         Map.entry(Location.RIVERBANK, List.of(
             new Job("reeds", Location.RIVERBANK, "Riet snijden", 11, 1, 16, 60, 13),
             new Job("bank", Location.RIVERBANK, "Oever verstevigen", 16, 2, 25, 60, 21),

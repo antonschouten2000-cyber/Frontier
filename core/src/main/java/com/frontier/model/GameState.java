@@ -8,6 +8,7 @@ public final class GameState {
     private Location location;
     private final Inventory inventory;
     private ActiveWork activeWork;
+    private TownState town = new TownState();
     private final Mailbox mailbox = new Mailbox();
     public GameState() { this(new Player(), new GameTime(), Location.RED_CREEK); }
     public GameState(Player player, GameTime time, Location location) {
@@ -26,6 +27,12 @@ public final class GameState {
         if (work != null && work.job().location() != location)
             throw new IllegalArgumentException("Werklocatie komt niet overeen met de spelerlocatie.");
         activeWork = work;
+    }
+    public TownState town() { return town; }
+    public void setTown(TownState town) {
+        Objects.requireNonNull(town);
+        if (player.bankMoney() > town.bankCapacity()) throw new IllegalArgumentException("Bankrekening boven de limiet.");
+        this.town = town;
     }
     public Mailbox mailbox() { return mailbox; }
     public Inventory inventory() { return inventory; }

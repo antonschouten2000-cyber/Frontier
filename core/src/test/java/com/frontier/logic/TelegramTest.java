@@ -16,8 +16,8 @@ class TelegramTest {
         assertEquals(600, report.durationSeconds()); assertEquals(game.state().player().money() - money, report.money());
         assertEquals(game.state().player().xp() - xp, report.xp()); assertEquals(game.state().time().value(), report.dateTime());
         assertFalse(report.read()); assertEquals(1, game.state().mailbox().unreadCount());
-        assertEquals(report.found() == null ? 0 : 1, game.state().inventory().totalCount());
-        if (report.found() != null) assertEquals(1, game.state().inventory().count(report.found()));
+        assertEquals(report.materialQuantity() + (report.found() == null ? 0 : 1), game.state().inventory().totalCount());
+        if (report.found() != null) assertEquals(1 + (report.found() == report.material() ? report.materialQuantity() : 0), game.state().inventory().count(report.found()));
     }
     @Test void actualFindIsRecordedInBothInventoryAndTelegram() {
         GameSession game = new GameSession(new Random(1) {
@@ -25,7 +25,7 @@ class TelegramTest {
         });
         game.work(game.jobsAt(Location.PINE_FOREST).getFirst());
         assertEquals(Item.WOOD, game.state().mailbox().messages().getFirst().found());
-        assertEquals(1, game.state().inventory().count(Item.WOOD));
+        assertEquals(13, game.state().inventory().count(Item.WOOD));
     }
     @Test void timerOnlySendsOnceAtCompletion() {
         Instant now = Instant.parse("2026-10-07T12:00:00Z");

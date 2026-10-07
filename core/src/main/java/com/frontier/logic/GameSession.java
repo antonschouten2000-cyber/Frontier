@@ -12,12 +12,14 @@ public final class GameSession {
     private final JobManager jobs;
     private final LootManager loot;
     private final Clock clock;
+    private final TownManager town = new TownManager(() -> state, this::isWorking);
     public GameSession() { this(RandomGenerator.getDefault()); }
     public GameSession(RandomGenerator random) { this(random, Clock.systemUTC()); }
     public GameSession(RandomGenerator random, Clock clock) {
         this.clock = Objects.requireNonNull(clock);
         jobs = new JobManager(random); loot = new LootManager(random);
     }
+    public TownManager town() { return town; }
     public GameState state() { return state; }
     public List<Job> jobsAt(Location location) { return jobs.at(location); }
     public Job currentJob() { return jobsAt(state.location()).isEmpty() ? null : jobsAt(state.location()).getFirst(); }
@@ -92,20 +94,23 @@ public final class GameSession {
     private String finishWork(Job job, WorkDuration duration) {
         int pay = jobs.payment(job, duration);
         int previousLevel = state.player().level();
-        state.player().reward(pay, job.xp(duration));
+        int bonus = state.player().reward(pay, job.xp(duration));
         state.time().advanceSeconds(duration.seconds());
         Item item = loot.find(job.location(), duration).orElse(null);
         if (item != null) state.inventory().add(item);
-        state.mailbox().add(new Telegram(job.name(), job.location(), duration.seconds(), pay, job.xp(duration),
-            item, state.time().value(), false));
+        Item material = WorkMaterials.item(job);
+        int quantity = WorkMaterials.quantity(job, duration);
+        if (material != null) state.inventory().add(material, quantity);
+        state.mailbox().add(new Telegram(job.name(), job.location(), duration.seconds(), pay + bonus, job.xp(duration),
+            item, state.time().value(), false, material, quantity, bonus));
         String found = item == null ? "" : " Gevonden: " + item.displayName() + "!";
         return job.name() + ": $" + pay + " en " + job.xp(duration) + " ervaring verdiend."
-            + (state.player().level() > previousLevel ? " Nieuw niveau: " + state.player().level() + "!" : "") + found;
+            + (state.player().level() > previousLevel ? " Nieuw niveau: " + state.player().level() + "! Bonus: $" + bonus + "." : "") + found + (material == null ? "" : " Materiaal: " + quantity + " x " + material.displayName() + ".");
     }
     public String sleep() {
         if (isWorking()) return "Je bent aan het werk. Slapen kan na je klus.";
         if (state.location() != Location.RED_CREEK) return "Je kunt alleen in de herberg van Red Creek slapen.";
-        state.player().rest(); state.time().advanceMinutes(TimeRules.SLEEP_HOURS * 60);
-        return TimeRules.SLEEP_HOURS + " uur geslapen. Je energie is weer 100.";
+        state.player().rest(); state.time().advanceMinutes(state.town().sleepMinutes());
+        return state.town().sleepMinutes() + " minuten geslapen. Je energie is weer 100.";
     }
 }

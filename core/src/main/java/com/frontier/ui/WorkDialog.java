@@ -3,6 +3,7 @@ package com.frontier.ui;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.frontier.logic.GameSession;
 import com.frontier.logic.LootManager;
+import com.frontier.logic.WorkMaterials;
 import com.frontier.model.*;
 import java.util.EnumMap;
 import java.util.Locale;
@@ -43,6 +44,7 @@ final class WorkDialog extends Dialog {
         details.clearChildren(); details.defaults().pad(5);
         row("Locatie", job.location().displayName());
         row("Opbrengst", "$" + job.scaledPay(job.basePay() - job.payVariation(), selected) + " tot $" + job.scaledPay(job.basePay() + job.payVariation(), selected));
+        if (WorkMaterials.item(job) != null) row("Vast bouwmateriaal", WorkMaterials.quantity(job, selected) + " x " + WorkMaterials.item(job).displayName());
         row("Ervaring", "+" + job.xp(selected));
         row("Energie voor werk", job.staminaCost(selected) + " punten");
         row("Duur van het werk", selected.displayName());

@@ -2,48 +2,68 @@ package com.frontier.ui;
 
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
-import com.frontier.logic.GameSession;
-import com.frontier.model.Location;
-import com.frontier.model.TimeRules;
+import com.frontier.logic.*;
+import com.frontier.model.*;
+import java.util.EnumMap;
 import java.util.function.Consumer;
 
-/** Een apart in-game venster; alleen de herberg voert een spelactie uit. */
+/** Gebouwbeheer, winkels, bank en herberg in een afzonderlijk stadsvenster. */
 final class TownDialog extends Dialog {
     private final GameSession game;
-    private final Label description, summary;
-    private final TextButton sleep;
+    private final Consumer<String> onAction;
+    private final Label description, summary, requirements;
+    private final TextButton sleep, shop, bank, upgrade;
+    private final EnumMap<Building, TextButton> signs = new EnumMap<>(Building.class);
+    private Building selected = Building.TOWN_HALL;
     TownDialog(Skin skin, GameSession game, Consumer<String> onAction) {
-        super("Red Creek - Stad", skin); this.game = game; setName("town-window");
+        super("Red Creek - Stad", skin); this.game = game; this.onAction = onAction; setName("town-window");
         if (!skin.has("town-art", Texture.class)) skin.add("town-art", TownArtwork.create());
-        Table contents = getContentTable(); contents.pad(20);
+        Table contents = getContentTable(); contents.pad(18);
         contents.add(new Label("RED CREEK", skin, "title")).left().padBottom(8).row();
-        contents.add(new Label("Kies een gebouw om het te bezoeken.", skin, "muted")).left().padBottom(14).row();
+        contents.add(new Label("Kies een gebouw om te winkelen, te upgraden of uit te rusten.", skin, "muted")).left().padBottom(10).row();
         Stack street = new Stack(); street.add(new Image(skin.get("town-art", Texture.class)));
-        Table signs = new Table(); signs.bottom().padBottom(23); signs.defaults().width(174).height(42).pad(6);
-        for (TownBuilding building : TownBuilding.values()) {
-            signs.add(Ui.button(skin, building.name, "building-" + building.name(), () -> select(building)));
+        Table buttons = new Table(); buttons.bottom().padBottom(20); buttons.defaults().width(174).height(50).pad(6);
+        for (Building building : Building.values()) {
+            TextButton sign = Ui.button(skin, building.displayName(), "building-" + building.name(), () -> { selected = building; refresh(); });
+            signs.put(building, sign); buttons.add(sign);
         }
-        street.add(signs); contents.add(street).width(960).height(350).row();
-        description = new Label("Welkom in Red Creek. Hier kun je gebouwen bezoeken en uitrusten in de herberg.", skin);
-        description.setWrap(true); description.setName("town-description");
+        street.add(buttons); contents.add(street).width(960).height(270).row();
+        description = new Label("", skin); description.setWrap(true); description.setName("town-description");
+        contents.add(description).width(930).height(55).left().padTop(10).row();
+        requirements = new Label("", skin, "muted"); requirements.setWrap(true); requirements.setName("town-upgrade-cost");
+        contents.add(requirements).width(930).height(50).left().padTop(4).row();
+        sleep = Ui.button(skin, "Slapen", "sleep", () -> action(game.sleep()));
+        shop = Ui.button(skin, "Winkel openen", "shop-open", () -> new ShopDialog(skin, game, selected, this::action).show(getStage()));
+        bank = Ui.button(skin, "Rekening beheren", "bank-open", () -> new BankDialog(skin, game, this::action).show(getStage()));
+        upgrade = Ui.button(skin, "Gebouw upgraden", "upgrade-building", () -> new BuildingUpgradeDialog(skin, game, selected, this::action).show(getStage()));
+        Table controls = new Table(); controls.defaults().width(218).height(42).padRight(12);
+        controls.add(upgrade); controls.add(shop); controls.add(bank); controls.add(sleep);
+        contents.add(controls).left().padTop(8).row();
         summary = new Label("", skin, "muted"); summary.setName("town-summary");
-        sleep = Ui.button(skin, TimeRules.SLEEP_HOURS + " uur slapen", "sleep", () -> {
-            onAction.accept(game.sleep()); updateSummary();
-        });
-        Table info = new Table(); info.add(description).width(705).height(72).left();
-        info.add(sleep).width(200).height(44).padLeft(20);
-        contents.add(info).growX().padTop(12).row();
-        contents.add(summary).left().padTop(6).row();
-        button("Terug naar de wereldkaart"); Ui.nameDialogButtons(this, "town-close"); getButtonTable().pad(16);
-        sleep.setVisible(false); updateSummary();
+        contents.add(summary).left().padTop(12).row();
+        button("Terug naar de wereldkaart"); Ui.nameDialogButtons(this, "town-close"); getButtonTable().pad(14); refresh();
     }
-    private void select(TownBuilding building) {
-        description.setText(building.name + "\n" + building.description);
-        sleep.setVisible(building == TownBuilding.INN);
-        sleep.setDisabled(game.state().location() != Location.RED_CREEK);
-    }
-    private void updateSummary() {
+    private void action(String message) { onAction.accept(message); refresh(); }
+    private void refresh() {
+        int level = game.state().town().level(selected);
+        signs.forEach((building, sign) -> sign.setText(building.displayName() + "\nLevel " + game.state().town().level(building)));
+        description.setText(selected.displayName() + " - Level " + level + "\n" + selected.description()
+            + (selected == Building.BANK ? " Limiet: $" + game.state().town().bankCapacity() + "." : ""));
+        if (level == Building.MAX_LEVEL) requirements.setText("Dit gebouw is volledig uitgebreid.");
+        else {
+            UpgradeCost cost = UpgradeCost.forBuilding(selected, level);
+            StringBuilder text = new StringBuilder("Naar level " + (level + 1) + ": $" + cost.money() + " cash");
+            for (Item item : Item.values()) if (cost.materials().containsKey(item))
+                text.append("  |  ").append(item.displayName()).append(" ").append(game.state().inventory().count(item)).append("/").append(cost.materials().get(item));
+            String reason = game.town().upgradeReason(selected); if (!reason.isEmpty()) text.append("\n").append(reason);
+            requirements.setText(text.toString());
+        }
+        upgrade.setDisabled(level == Building.MAX_LEVEL);
+        shop.setVisible(selected == Building.GUNSMITH || selected == Building.TAILOR);
+        bank.setVisible(selected == Building.BANK); sleep.setVisible(selected == Building.INN);
+        sleep.setText(Ui.duration(game.state().town().sleepMinutes()) + " slapen");
+        sleep.setDisabled(game.state().location() != Location.RED_CREEK || game.isWorking());
         summary.setText(game.state().time().display() + "   |   Energie " + game.state().player().stamina()
-            + "/100   |   Geld bij je: $" + game.state().player().money());
+            + "/100   |   Cash $" + game.state().player().money() + "   |   Rekening $" + game.state().player().bankMoney());
     }
 }

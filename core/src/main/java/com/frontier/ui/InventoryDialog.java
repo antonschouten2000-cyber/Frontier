@@ -35,17 +35,14 @@ final class InventoryDialog extends Dialog {
         items.clearChildren(); items.top();
         all.setDisabled(category == null);
         filters.forEach((key, tab) -> tab.setDisabled(key == category));
-        boolean any = false;
+        boolean any = false; int column = 0;
         for (Item item : Item.values()) {
             int quantity = inventory.count(item);
             if (quantity == 0 || category != null && item.category() != category) continue;
             any = true;
-            Table row = new Table(); row.setBackground(skin.getDrawable("card")); row.pad(8);
-            TextButton name = Ui.button(skin, item.displayName(), "item-" + item.name(), () -> description.setText(item.description()));
-            row.add(name).width(265).height(40).left();
-            row.add(new Label(item.category().displayName(), skin, "muted")).expandX().center();
-            row.add(new Label("x " + quantity, skin, "accent")).width(58).right();
-            items.add(row).width(555).padBottom(7).row();
+            ItemTile tile = new ItemTile(skin, item, "x " + quantity, "item-" + item.name(), () -> description.setText(item.description()));
+            items.add(tile).width(135).height(130).pad(3);
+            if (++column % 4 == 0) items.row();
         }
         if (!any) {
             Label empty = new Label(inventory.totalCount() == 0

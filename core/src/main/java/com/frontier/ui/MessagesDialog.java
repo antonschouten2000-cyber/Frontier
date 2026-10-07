@@ -19,7 +19,7 @@ final class MessagesDialog extends Dialog {
         getContentTable().add(scroll).width(610).height(180).row();
         Table paper = new Table(); paper.setBackground(skin.getDrawable("card")); paper.pad(16);
         details = new Label("Kies een telegram om het verslag te lezen.", skin); details.setWrap(true); details.setName("telegram-details");
-        paper.add(details).width(570).height(215).left().top();
+        paper.add(details).width(570).height(255).left().top();
         getContentTable().add(paper).padTop(14).row();
         button("Sluiten"); Ui.nameDialogButtons(this, "messages-close"); getButtonTable().pad(14);
         refresh();
@@ -50,7 +50,9 @@ final class MessagesDialog extends Dialog {
             + new GameTime(message.dateTime()).display() + "\n\n"
             + "Werktijd: " + duration + "\n"
             + "Opbrengst: $" + message.money() + "  |  Ervaring: +" + message.xp() + "\n"
-            + "Gevonden: " + (message.found() == null ? "Geen voorwerpen." : "1 x " + message.found().displayName()));
+            + "Gevonden: " + (message.found() == null ? "Geen voorwerpen." : "1 x " + message.found().displayName())
+            + (message.material() == null ? "" : "\nBouwmateriaal: " + message.materialQuantity() + " x " + message.material().displayName())
+            + (message.levelBonus() == 0 ? "" : "\nWaarvan levelbonus: $" + message.levelBonus()));
         refresh(); onRead.run();
     }
 }

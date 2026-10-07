@@ -64,6 +64,11 @@ public final class FrontierSkin {
         xp.knobBefore = skin.newDrawable("pixel", Color.valueOf("b58b43")); xp.knobBefore.setMinHeight(18);
         xp.background.setMinHeight(18); stamina.knobBefore.setMinHeight(18);
         skin.add("experience-horizontal", xp);
+        TextField.TextFieldStyle field = new TextField.TextFieldStyle();
+        field.font = font; field.fontColor = cream; field.background = skin.getDrawable("card");
+        field.cursor = skin.newDrawable("pixel", cream); field.cursor.setMinWidth(2);
+        field.selection = skin.newDrawable("pixel", Color.valueOf("705436")); skin.add("default", field);
+        ItemIcons.install(skin);
         return skin;
     }
     private static BitmapFont font(String path, int size) {
