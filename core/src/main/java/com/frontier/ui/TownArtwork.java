@@ -8,10 +8,21 @@ final class TownArtwork {
     static final int WIDTH = 1150, HEIGHT = 350;
     private final Pixmap p = new Pixmap(WIDTH, HEIGHT, Pixmap.Format.RGBA8888);
     private TownArtwork() {}
-    static Texture create() {
-        TownArtwork art = new TownArtwork(); art.paint(); Pixmap scaled = new Pixmap(960, HEIGHT, Pixmap.Format.RGBA8888);
+    static Texture create() { return create(new com.frontier.model.TravelJournal()); }
+    static Texture create(com.frontier.model.TravelJournal journal) {
+        TownArtwork art = new TownArtwork(); art.paint(); art.projects(journal); Pixmap scaled = new Pixmap(960, HEIGHT, Pixmap.Format.RGBA8888);
         scaled.drawPixmap(art.p, 0, 0, WIDTH, HEIGHT, 0, 0, 960, HEIGHT);
         Texture t = new Texture(scaled); scaled.dispose(); art.p.dispose(); return t;
+    }
+    private void projects(com.frontier.model.TravelJournal journal) {
+        if(journal.done(com.frontier.model.VillageProject.VERANDA)) {
+            int x=26+3*187; color("c8a56c");p.fillRectangle(x-9,238,177,16);
+            color("765039");p.fillRectangle(x-9,179,177,9);p.fillRectangle(x-5,185,6,53);p.fillRectangle(x+158,185,6,53);
+            color("533d2c");p.fillRectangle(x+10,221,36,5);p.fillRectangle(x+112,221,36,5);p.fillRectangle(x+13,221,4,16);p.fillRectangle(x+142,221,4,16);
+            color("e5c672");p.fillCircle(x+80,177,7);
+        }
+        if(journal.done(com.frontier.model.VillageProject.WELL)) {color("66864e");p.fillRectangle(8,276,120,12);color("a4b274");for(int x=15;x<125;x+=12)p.drawLine(x,275,x+5,266);}
+        if(journal.done(com.frontier.model.VillageProject.BRIDGE)) {color("e4d4a9");p.fillRectangle(970,260,130,25);color("68533b");for(int x=975;x<1100;x+=12)p.drawLine(x,260,x,285);}
     }
     private void color(String hex) { p.setColor(Color.valueOf(hex)); }
     private void paint() {

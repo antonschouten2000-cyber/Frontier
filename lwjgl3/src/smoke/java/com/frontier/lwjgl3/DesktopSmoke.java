@@ -19,7 +19,7 @@ import java.time.*;
 /** Echte desktopbediening, met een geïsoleerd tijdelijk opslagbestand. */
 public final class DesktopSmoke extends Game {
     private final TestClock clock = new TestClock();
-    private final GameSession session = new GameSession(new Random(1880), clock);
+    private final GameSession session = new GameSession(new Random(1880), clock, new Random(){@Override public double nextDouble(){return 0;}});
     private boolean autoFinishWork = true;
     private final SaveManager saves;
     private Throwable failure;
@@ -28,6 +28,7 @@ public final class DesktopSmoke extends Game {
     private int savedMoney, savedBankMoney;
     private Map<Building, Integer> savedBuildingLevels;
     private java.util.List<Telegram> savedTelegrams;
+    private java.util.List<TravelJournal.Page> savedPages;
     private DesktopSmoke(Path directory) { saves = new SaveManager(directory.resolve("save.json")); }
     public static void main(String[] args) throws Exception {
         Path directory = Files.createTempDirectory("frontier-smoke-");
@@ -39,7 +40,7 @@ public final class DesktopSmoke extends Game {
             new Lwjgl3Application(app, config);
             if (app.failure != null) throw new AssertionError("Desktopcontrole mislukt", app.failure);
             check(app.frame >= 20, "Alle stappen moeten zijn uitgevoerd.");
-            System.out.println("DESKTOP SMOKE PASSED: glad lettertype, uitgezoomde kaart en meegroeiende interface, vier toekomstige bezittingen, kaart slepen, statusbalken, stadsgebouwen, gebouwupgrades, bank, winkels en itemiconen, herberg, 42 klussen met echte werktimers, inventaris, instellingen, opslag, formaat en afsluiten.");
+            System.out.println("DESKTOP SMOKE PASSED: glad lettertype, uitgezoomde kaart en meegroeiende interface, vier toekomstige bezittingen, kaart slepen, statusbalken, stadsgebouwen, gebouwupgrades, bank, winkels en itemiconen, herberg, 44 klussen met echte werktimers, dorpsprojecten en reisdagboek, inventaris, instellingen, opslag, formaat en afsluiten.");
         } finally { Files.deleteIfExists(directory.resolve("save.json")); Files.deleteIfExists(directory); }
     }
     @Override public void create() { setScreen(new GameScreen(session, saves)); }
@@ -109,6 +110,7 @@ public final class DesktopSmoke extends Game {
                 verifyDurationChoices();
                 // Alle werkzaamheden via hun menu uitvoeren met een vervangbare testklok.
                 for (Location location : Location.values()) {
+                    if(location==Location.FORGOTTEN_STOP) continue; // De brug wordt verderop via dorpsprojecten hersteld.
                     for (Job job : session.jobsAt(location)) {
                         click("travel-" + location.name());
                         click("job-" + job.id()); click("work-confirm");
@@ -124,6 +126,7 @@ public final class DesktopSmoke extends Game {
                 click("work-cancel"); goHomeAndRest();
                 check(session.state().inventory().totalCount() > 0, "Werkzaamheden moeten daadwerkelijk vondsten opleveren.");
                 verifyTownEconomy();
+                verifyVillageStory();
                 // Aanvullende fixtures zorgen dat alle filter- en beschrijvingsknoppen worden aangeklikt.
                 session.state().inventory().add(Item.REVOLVER); session.state().inventory().add(Item.COAT); session.state().inventory().add(Item.WOOD);
                 click("inventory"); click("inventory-WEAPON"); click("item-REVOLVER");
@@ -136,13 +139,15 @@ public final class DesktopSmoke extends Game {
                 click("settings"); click("save-game"); savedMoney = session.state().player().money();
                 savedBankMoney = session.state().player().bankMoney(); savedBuildingLevels = session.state().town().levels();
                 savedInventory = new EnumMap<>(session.state().inventory().contents());
-                savedTelegrams = session.state().mailbox().messages();
+                savedTelegrams = session.state().mailbox().messages(); savedPages=session.state().journal().pages();
                 click("travel-PINE_FOREST"); click("job-wood"); click("work-confirm");
                 click("settings"); click("load-game");
                 check(session.state().player().money() == savedMoney, "Laden herstelt geld.");
                 check(session.state().player().bankMoney() == savedBankMoney, "Laden herstelt het banksaldo.");
                 check(session.state().town().levels().equals(savedBuildingLevels), "Laden herstelt gebouwlevels.");
                 check(session.state().inventory().contents().equals(savedInventory), "Laden herstelt alle voorwerpen.");
+                check(session.state().journal().pages().equals(savedPages),"Laden herstelt het reisdagboek.");
+                check(session.state().journal().completed().size()==3,"Laden herstelt dorpsprojecten.");
                 check(session.state().mailbox().messages().equals(savedTelegrams), "Laden herstelt berichten en leesstatus.");
                 click("settings"); click("new-game"); click("new-cancel");
                 check(session.state().player().money() == savedMoney, "Nieuw spel annuleren behoudt voortgang.");
@@ -186,7 +191,7 @@ public final class DesktopSmoke extends Game {
         var before = session.state().time().value();
         click("town"); click("building-INN"); click("sleep"); click("town-close");
         check(session.state().player().stamina() == 100, "Slapen herstelt alle energie.");
-        check(session.state().time().value().equals(before.plusMinutes(session.state().town().sleepMinutes())), "Slapen gebruikt de duur van het herberglevel.");
+        check(session.state().time().value().equals(before.plusMinutes(session.story().sleepMinutes())), "Slapen gebruikt de duur van het herberglevel.");
     }
     private void click(String name) {
         Stage stage = stage();
@@ -248,6 +253,28 @@ public final class DesktopSmoke extends Game {
         check(session.state().equipment().wearing(Item.BOOTS), "Kleding uitrusten via de inventaris.");
         click("equip-item"); click("inventory-close");
         check(labelText(stage().getRoot().findActor("wallet-hud")).contains("Bank $60"), "De statusbalk toont cash en banksaldo.");
+    }
+    private void verifyVillageStory() {
+        goHomeAndRest();
+        check(!session.travelBlockReason(Location.FORGOTTEN_STOP).isEmpty(), "De overkant is eerst vergrendeld.");
+        click("town");click("building-SALOON");click("saloon-open");click("village-projects");
+        click("project-VERANDA");
+        check(session.state().journal().first()==VillageProject.VERANDA,"De eerste keuze blijft bewaard.");
+        check(((TextButton)stage().getRoot().findActor("project-WELL")).isDisabled(),"Maak de gekozen belofte eerst af.");
+        click("project-VERANDA");check(session.state().journal().done(VillageProject.VERANDA),"Een project wordt via het venster gebouwd.");
+        click("project-WELL");click("project-WELL");
+        click("project-BRIDGE");click("project-BRIDGE");
+        check(session.state().journal().completed().size()==3,"Alle drie dorpsprojecten zijn voltooid.");
+        capture("build/frontier-village-projects.png");click("projects-close");click("saloon-close");
+        capture("build/frontier-story-town.png");click("town-close");
+        check(stage().getRoot().findActor("restored-well").isVisible(),"De kaart toont de herstelde waterput.");
+        check(stage().getRoot().findActor("restored-bridge").isVisible(),"De kaart toont de nieuwe voetbrug.");
+        for(Job job:session.jobsAt(Location.FORGOTTEN_STOP)){
+            click("travel-FORGOTTEN_STOP");click("job-"+job.id());click("work-confirm");
+            check(session.state().location()==Location.FORGOTTEN_STOP,"De nieuwe route en klussen zijn bereikbaar.");goHomeAndRest();
+        }
+        click("journal");check(labelText(stage().getRoot()).contains("Aan de andere oever"),"Het dagboek bewaart ontmoetingen en mijlpalen.");
+        capture("build/frontier-travel-journal.png");click("journal-close");
     }
     private void verifyTelegram() {
         int index = session.state().mailbox().size() - 1; Telegram message = session.state().mailbox().messages().get(index);

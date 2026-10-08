@@ -24,7 +24,8 @@ public final class SaveManager {
     public void save(GameState state) throws IOException {
         SaveData data = new SaveData();
         Player player = state.player();
-        data.version = 6;
+        data.version = 7;
+        data.journal = JournalCodec.write(state.journal());
         data.equipment = new java.util.LinkedHashMap<>();
         state.equipment().items().forEach((slot,item)->data.equipment.put(slot.name(),item.name()));
         data.missions = new java.util.LinkedHashMap<>();
@@ -84,7 +85,7 @@ public final class SaveManager {
                 if (!root.get(field).isString()) throw new IllegalArgumentException("Ongeldige tekst: " + field);
             }
             int version = root.getInt("version");
-            if (version < 1 || version > 6) throw new IllegalArgumentException("Deze opslagversie wordt niet ondersteund.");
+            if (version < 1 || version > 7) throw new IllegalArgumentException("Deze opslagversie wordt niet ondersteund.");
             Inventory inventory = new Inventory();
             if (version >= 2) {
                 JsonValue entries = root.get("inventory");
@@ -134,6 +135,9 @@ public final class SaveManager {
                     loaded.missions().restore(Mission.valueOf(entry.name()), entry.getInt("progress"), entry.getBoolean("claimed"));
                 }
             }
+            if (version >= 7) JournalCodec.read(root, loaded.journal());
+            if (loaded.location()==Location.FORGOTTEN_STOP && !loaded.journal().done(VillageProject.BRIDGE))
+                throw new IllegalArgumentException("De brug is nog niet hersteld.");
             return loaded;
         } catch (RuntimeException e) {
             throw new IOException("Dit spel kan niet worden geladen: " + e.getMessage(), e);
@@ -141,6 +145,7 @@ public final class SaveManager {
     }
     public static final class MissionData { public int progress; public boolean claimed; }
     public static final class SaveData {
+        public JournalCodec.Data journal;
         public java.util.Map<String, MissionData> missions;
         public java.util.Map<String, String> equipment;
         public int version, money, bankMoney, level, xp, stamina;

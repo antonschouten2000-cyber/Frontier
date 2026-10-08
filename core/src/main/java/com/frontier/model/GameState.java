@@ -9,6 +9,8 @@ public final class GameState {
     private final Inventory inventory;
     private ActiveWork activeWork;
     private TownState town = new TownState();
+    private final TravelJournal journal = new TravelJournal();
+    public TravelJournal journal() { return journal; }
     private final Equipment equipment = new Equipment();
     public Equipment equipment() { return equipment; }
     private final MissionJournal missions = new MissionJournal();

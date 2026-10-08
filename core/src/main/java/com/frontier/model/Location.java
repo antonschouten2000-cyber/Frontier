@@ -12,7 +12,8 @@ public enum Location {
     NORTH_WOODS("Noorderwoud", .85f, 1.65f),
     QUARRY("Steengroeve", 1.55f, 1.25f),
     RIVERBANK("Rivieroever", -.45f, .05f),
-    TRADING_POST("Handelspost", -.65f, 1.80f);
+    TRADING_POST("Handelspost", -.65f, 1.80f),
+    FORGOTTEN_STOP("Vergeten halte", .75f, 1.25f);
 
     private final String displayName;
     private final float x, y;

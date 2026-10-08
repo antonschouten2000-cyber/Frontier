@@ -62,6 +62,7 @@ final class WorldArtwork {
                 case NORTH_WOODS -> { for (int i = 0; i < 100; i++) tree(x - 110 + random.nextInt(220), y - 35 + random.nextInt(150)); cabin(x - 45, y + 35, 44, 28); }
                 case QUARRY -> quarry(x, y + 30);
                 case RIVERBANK -> { color("715034"); p.fillRectangle(x - 55, y + 35, 85, 12); for (int n = -50; n < 30; n += 6) { color("b89562"); p.drawLine(x + n, y + 35, x + n, y + 47); } cabin(x + 35, y + 30, 31, 24); }
+                case FORGOTTEN_STOP -> { cabin(x-42,y+30,80,30); color("5f5a45");p.drawLine(x-80,y+77,x+95,y+77);p.drawLine(x-80,y+84,x+95,y+84);for(int n=-75;n<95;n+=12)p.drawLine(x+n,y+73,x+n,y+88); }
                 case TRADING_POST -> { cabin(x - 50, y + 35, 58, 38); cabin(x + 30, y + 40, 38, 27); color("9a7951"); for (int n = 0; n < 4; n++) p.fillRectangle(x - 35 + n * 22, y + 85, 17, 14); }
                 default -> { }
             }

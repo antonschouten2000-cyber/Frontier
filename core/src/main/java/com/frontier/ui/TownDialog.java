@@ -14,14 +14,17 @@ final class TownDialog extends Dialog {
     private final Label description, summary, requirements;
     private final TextButton sleep, shop, bank, upgrade, saloon;
     private final EnumMap<Building, TextButton> signs = new EnumMap<>(Building.class);
+    private Image streetImage;
+    private Texture streetTexture;
+    private java.util.Set<VillageProject> picturedProjects = java.util.Set.of();
     private Building selected = Building.TOWN_HALL;
     TownDialog(Skin skin, GameSession game, Consumer<String> onAction) {
         super("Red Creek - Stad", skin); this.game = game; this.onAction = onAction; setName("town-window");
-        if (!skin.has("town-art", Texture.class)) skin.add("town-art", TownArtwork.create());
+        streetTexture = TownArtwork.create(game.state().journal()); picturedProjects=game.state().journal().completed();
         Table contents = getContentTable(); contents.pad(18);
         contents.add(new Label("RED CREEK", skin, "title")).left().padBottom(8).row();
-        contents.add(new Label("Kies een gebouw om te winkelen, te upgraden of uit te rusten.", skin, "muted")).left().padBottom(10).row();
-        Stack street = new Stack(); street.add(new Image(skin.get("town-art", Texture.class)));
+        contents.add(new Label("Een dorp dat weer tot leven komt. In de Saloon besluiten we wat we samen herstellen.", skin, "muted")).left().padBottom(10).row();
+        Stack street = new Stack(); streetImage=new Image(streetTexture); street.add(streetImage);
         Table buttons = new Table(); buttons.bottom().padBottom(20); buttons.defaults().width(146).height(50).pad(6);
         for (Building building : Building.values()) {
             TextButton sign = Ui.button(skin, building.displayName(), "building-" + building.name(), () -> { selected = building; refresh(); });
@@ -45,7 +48,12 @@ final class TownDialog extends Dialog {
         button("Terug naar de wereldkaart"); Ui.nameDialogButtons(this, "town-close"); getButtonTable().pad(14); refresh();
     }
     private void action(String message) { onAction.accept(message); refresh(); }
+    @Override public void act(float delta) { super.act(delta); if(!picturedProjects.equals(game.state().journal().completed())) refresh(); }
+    @Override public boolean remove() { boolean removed=super.remove(); if(removed && streetTexture!=null){streetTexture.dispose();streetTexture=null;} return removed; }
     private void refresh() {
+        if(!picturedProjects.equals(game.state().journal().completed())) {
+            Texture replacement=TownArtwork.create(game.state().journal()); streetImage.setDrawable(new com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable(replacement)); streetTexture.dispose(); streetTexture=replacement; picturedProjects=game.state().journal().completed();
+        }
         int level = game.state().town().level(selected);
         signs.forEach((building, sign) -> sign.setText(building.displayName() + "\nLevel " + game.state().town().level(building)));
         description.setText(selected.displayName() + " - Level " + level + "\n" + selected.description()
@@ -63,9 +71,9 @@ final class TownDialog extends Dialog {
         shop.setVisible(selected == Building.GUNSMITH || selected == Building.TAILOR);
         saloon.setVisible(selected == Building.SALOON);
         bank.setVisible(selected == Building.BANK); sleep.setVisible(selected == Building.INN);
-        sleep.setText(Ui.duration(game.state().town().sleepMinutes()) + " slapen");
+        sleep.setText(Ui.duration(game.story().sleepMinutes()) + " slapen");
         sleep.setDisabled(game.state().location() != Location.RED_CREEK || game.isWorking());
         summary.setText(game.state().time().display() + "   |   Energie " + game.state().player().stamina()
-            + "/100   |   Cash $" + game.state().player().money() + "   |   Rekening $" + game.state().player().bankMoney());
+            + "/100   |   Dorpsprojecten " + game.state().journal().completed().size() + "/3   |   Cash $" + game.state().player().money() + "   |   Rekening $" + game.state().player().bankMoney());
     }
 }

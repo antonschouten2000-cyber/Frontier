@@ -12,14 +12,19 @@ public final class GameSession {
     private final JobManager jobs;
     private final LootManager loot;
     private final Clock clock;
+    private final StoryManager story;
+    public StoryManager story() { return story; }
     private final TownManager town = new TownManager(() -> state, this::isWorking);
     public GameSession() { this(RandomGenerator.getDefault()); }
     public GameSession(RandomGenerator random) { this(random, Clock.systemUTC()); }
-    public GameSession(RandomGenerator random, Clock clock) {
+    public GameSession(RandomGenerator random, Clock clock) { this(random, clock, RandomGenerator.getDefault()); }
+    public GameSession(RandomGenerator random, Clock clock, RandomGenerator discoveries) {
         this.clock = Objects.requireNonNull(clock);
         jobs = new JobManager(random); loot = new LootManager(random);
+        story = new StoryManager(() -> state, this::isWorking, Objects.requireNonNull(discoveries));
+        missions = new MissionManager(() -> state, this::isWorking, story::missionAccepted, story::missionClaimed);
     }
-    private final MissionManager missions = new MissionManager(() -> state, this::isWorking);
+    private final MissionManager missions;
     public MissionManager missions() { return missions; }
     public TownManager town() { return town; }
     public GameState state() { return state; }
@@ -30,13 +35,14 @@ public final class GameSession {
         Objects.requireNonNull(saved);
         if (saved.activeWork() != null && !jobs.contains(saved.activeWork().job()))
             throw new IllegalArgumentException("Onbekende lopende klus.");
+        if (!saved.journal().done(VillageProject.BRIDGE) && saved.location()==Location.FORGOTTEN_STOP) throw new IllegalArgumentException("De brug is nog niet hersteld.");
         state = saved;
     }
     public boolean isWorking() { return state.activeWork() != null; }
     public float workProgress() { return isWorking() ? state.activeWork().progress(clock.millis()) : 0; }
     public long workSecondsRemaining() { return isWorking() ? (state.activeWork().remainingMillis(clock.millis()) + 999) / 1000 : 0; }
     public int travelCost(Location target) { return state.equipment().travelCost(state.location().travelStaminaTo(target)); }
-    public int workCost(Job job, WorkDuration duration) { return state.equipment().workCost(job, duration); }
+    public int workCost(Job job, WorkDuration duration) { return story.workCost(job,duration,state.equipment().workCost(job, duration)); }
     public String toggleEquipment(Item item) {
         if (isWorking()) return "Wissel kleding na je klus.";
         if (Equipment.slot(item)==null || state.inventory().count(item)==0) return "Deze kleding is niet beschikbaar.";
@@ -50,7 +56,7 @@ public final class GameSession {
         ActiveWork active = new ActiveWork(job, duration, now, Math.addExact(now, duration.seconds() * 1000L));
         int tripMinutes = state.location().travelMinutesTo(job.location());
         state.player().spendStamina(travelCost(job.location()) + workCost(job, duration));
-        state.time().advanceMinutes(tripMinutes); state.moveTo(job.location()); state.setActiveWork(active);
+        state.time().advanceMinutes(tripMinutes); state.moveTo(job.location()); story.arrived(job.location()); state.setActiveWork(active);
         return job.name() + " gestart. Werktijd: " + duration.displayName() + ".";
     }
     /** Geeft eenmaal een resultaat terug, ook als een opgeslagen timer al verstreken is. */
@@ -62,6 +68,7 @@ public final class GameSession {
     }
     public String travelBlockReason(Location target) {
         if (isWorking()) return "Je bent aan het werk. Wacht tot je klus klaar is.";
+        String access = story.accessReason(target); if (!access.isEmpty()) return access;
         if (target == state.location()) return "Je bent al op deze locatie.";
         int trip = travelCost(target);
         int reserve = target.travelStaminaTo(Location.RED_CREEK);
@@ -74,7 +81,7 @@ public final class GameSession {
         if (!reason.isEmpty()) return reason;
         int minutes = state.location().travelMinutesTo(target);
         state.player().spendStamina(travelCost(target));
-        state.time().advanceMinutes(minutes); state.moveTo(target);
+        state.time().advanceMinutes(minutes); state.moveTo(target); story.arrived(target);
         return "Aangekomen bij " + target.displayName() + ". De reis duurde " + minutes + " minuten.";
     }
     public String workBlockReason() { return workBlockReason(currentJob()); }
@@ -83,6 +90,7 @@ public final class GameSession {
         Objects.requireNonNull(duration);
         if (isWorking()) return "Er loopt al een klus. Wacht tot deze klaar is.";
         if (!jobs.contains(job)) return "Deze werkzaamheid is niet beschikbaar.";
+        String access = story.accessReason(job.location()); if (!access.isEmpty()) return access;
         int trip = travelCost(job.location());
         int reserve = job.location().travelStaminaTo(Location.RED_CREEK);
         if (state.player().stamina() < trip + workCost(job, duration) + reserve)
@@ -98,7 +106,7 @@ public final class GameSession {
         int tripCost = travelCost(job.location());
         int tripMinutes = state.location().travelMinutesTo(job.location());
         state.player().spendStamina(tripCost + workCost(job, duration));
-        state.time().advanceMinutes(tripMinutes); state.moveTo(job.location());
+        state.time().advanceMinutes(tripMinutes); state.moveTo(job.location()); story.arrived(job.location());
         return finishWork(job, duration);
     }
     private String finishWork(Job job, WorkDuration duration) {
@@ -112,16 +120,18 @@ public final class GameSession {
         int quantity = WorkMaterials.quantity(job, duration);
         if (material != null) state.inventory().add(material, quantity);
         state.missions().completedWork(job.location());
+        Discovery discovery = story.completedWork(job,duration);
         state.mailbox().add(new Telegram(job.name(), job.location(), duration.seconds(), pay + bonus, job.xp(duration),
             item, state.time().value(), false, material, quantity, bonus));
+        String discoveryText = discovery == null ? "" : " Ontdekking: " + discovery.title() + "! Lees je reisdagboek.";
         String found = item == null ? "" : " Gevonden: " + item.displayName() + "!";
         return job.name() + ": $" + pay + " en " + job.xp(duration) + " ervaring verdiend."
-            + (state.player().level() > previousLevel ? " Nieuw niveau: " + state.player().level() + "! Bonus: $" + bonus + "." : "") + found + (material == null ? "" : " Materiaal: " + quantity + " x " + material.displayName() + ".");
+            + (state.player().level() > previousLevel ? " Nieuw niveau: " + state.player().level() + "! Bonus: $" + bonus + "." : "") + found + discoveryText + (material == null ? "" : " Materiaal: " + quantity + " x " + material.displayName() + ".");
     }
     public String sleep() {
         if (isWorking()) return "Je bent aan het werk. Slapen kan na je klus.";
         if (state.location() != Location.RED_CREEK) return "Je kunt alleen in de herberg van Red Creek slapen.";
-        state.player().rest(); state.time().advanceMinutes(state.town().sleepMinutes());
-        return state.town().sleepMinutes() + " minuten geslapen. Je energie is weer 100.";
+        state.player().rest(); state.time().advanceMinutes(story.sleepMinutes());
+        return story.sleepMinutes() + " minuten geslapen. Je energie is weer 100.";
     }
 }

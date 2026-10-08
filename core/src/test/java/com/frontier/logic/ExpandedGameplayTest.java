@@ -9,15 +9,15 @@ import java.util.random.RandomGenerator;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ExpandedGameplayTest {
-    @Test void fortyTwoDistinctJobsAreOutsideTown() {
+    @Test void fortyFourDistinctJobsAreOutsideTown() {
         GameSession game = new GameSession(); Set<String> ids = new HashSet<>();
         for (Location location : Location.values()) {
-            assertEquals(location == Location.RED_CREEK ? 0 : location.ordinal() <= Location.LONELY_RANCH.ordinal() ? 6 : 3, game.jobsAt(location).size());
+            assertEquals(location == Location.FORGOTTEN_STOP ? 2 : location == Location.RED_CREEK ? 0 : location.ordinal() <= Location.LONELY_RANCH.ordinal() ? 6 : 3, game.jobsAt(location).size());
             for (Job job : game.jobsAt(location)) {
                 assertEquals(location, job.location()); assertTrue(ids.add(job.id()));
             }
         }
-        assertEquals(42, ids.size()); assertNull(game.currentJob());
+        assertEquals(44, ids.size()); assertNull(game.currentJob());
         assertFalse(game.workBlockReason().isEmpty()); game.work();
         assertEquals(20, game.state().player().money()); assertEquals(100, game.state().player().stamina());
         assertEquals(GameTime.START, game.state().time().value());
@@ -26,6 +26,10 @@ class ExpandedGameplayTest {
         GameSession game = new GameSession(new Random(1));
         for (Job job : game.jobsAt(target)) {
             game.newGame();
+            if (target==Location.FORGOTTEN_STOP) {
+                game.state().journal().select(VillageProject.VERANDA);game.state().journal().finish();
+                game.state().journal().select(VillageProject.BRIDGE);game.state().journal().finish();
+            }
             int travelCost = Location.RED_CREEK.travelStaminaTo(target);
             int travelMinutes = Location.RED_CREEK.travelMinutesTo(target);
             game.work(job);

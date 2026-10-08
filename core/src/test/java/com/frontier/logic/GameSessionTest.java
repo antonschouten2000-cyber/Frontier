@@ -19,7 +19,12 @@ class GameSessionTest {
             () -> assertEquals(LocalDateTime.of(1880, 4, 1, 8, 0), s.time().value()));
     }
     @ParameterizedTest @EnumSource(value = Location.class, names = "RED_CREEK", mode = EnumSource.Mode.EXCLUDE) void everyJobPaysAndAdvancesOnlyActionTime(Location location) {
-        GameSession game = session(); game.travel(location);
+        GameSession game = session();
+        if(location==Location.FORGOTTEN_STOP){
+            game.state().journal().select(VillageProject.WELL);game.state().journal().finish();
+            game.state().journal().select(VillageProject.BRIDGE);game.state().journal().finish();
+        }
+        game.travel(location);
         Player p = game.state().player();
         Job job = game.currentJob();
         int money = p.money(), stamina = p.stamina(), xp = p.xp();
@@ -55,7 +60,12 @@ class GameSessionTest {
         assertEquals(GameTime.START, game.state().time().value());
     }
     @ParameterizedTest @EnumSource(value = Location.class, names = "RED_CREEK", mode = EnumSource.Mode.EXCLUDE) void exhaustingWorkNeverStrandsPlayer(Location location) {
-        GameSession game = session(); game.travel(location);
+        GameSession game = session();
+        if(location==Location.FORGOTTEN_STOP){
+            game.state().journal().select(VillageProject.WELL);game.state().journal().finish();
+            game.state().journal().select(VillageProject.BRIDGE);game.state().journal().finish();
+        }
+        game.travel(location);
         int actions = 0;
         while (game.workBlockReason().isEmpty()) {
             game.work(); assertTrue(++actions <= 5);

@@ -37,7 +37,7 @@ public final class GameScreen extends ScreenAdapter {
         status.setName("status");
         Table root = new Table(); root.setFillParent(true); root.pad(20); root.setBackground(skin.getDrawable("wood")); stage.addActor(root);
         Table heading = new Table(); heading.add(label("FRONTIER", "title")).left().expandX();
-        heading.add(label("EEN LEVEN AAN DE GRENS  /  1880", "muted")).right();
+        heading.add(label("EEN STREEK OM THUIS TE KOMEN  /  1880", "muted")).right();
         root.add(heading).growX().padBottom(16).row();
         root.add(actionBar).growX().padBottom(14).row();
         Table content = new Table(), territory = new Table();
@@ -64,6 +64,7 @@ public final class GameScreen extends ScreenAdapter {
         Table menu = new Table(); menu.defaults().height(44).padRight(8);
         menu.add(inventory).width(200);
         menu.add(messages).width(200);
+        menu.add(button("Reisdagboek", "journal", () -> new TravelJournalDialog(skin, game.state().journal()).show(stage))).width(180);
         menu.add(label("De klok wacht op jou.", "muted")).expandX();
         menu.add(button("Instellingen", "settings", () ->
             new SettingsDialog(skin, this::confirmNewGame, this::save, this::load).show(stage))).width(175).padRight(0);
@@ -124,6 +125,7 @@ public final class GameScreen extends ScreenAdapter {
             case QUARRY -> "Een steengroeve met grindhopen en leisteen.";
             case RIVERBANK -> "Rietkragen, visnetten en een kleine aanlegsteiger.";
             case TRADING_POST -> "Een handelspost met een magazijn en vrachtkisten.";
+            case FORGOTTEN_STOP -> game.state().journal().done(VillageProject.BRIDGE) ? "Een overwoekerde halte aan de overkant. Welke verhalen liggen hier begraven?" : "De ingestorte voetbrug blokkeert de overkant. Herstel haar via Dorpsprojecten in de Saloon.";
         });
         travel.setText(selected == game.state().location() ? "Je bent hier" : "Reizen naar deze locatie");
         travel.setDisabled(selected == game.state().location() || game.isWorking());

@@ -24,7 +24,12 @@ class WorldMapTest {
             assertTrue(WorldMap.x(location) >= 150 && WorldMap.x(location) < WorldMap.WIDTH - 150);
             assertTrue(WorldMap.y(location) >= 150 && WorldMap.y(location) < WorldMap.HEIGHT - 150);
             for (Job job : game.jobsAt(location)) {
-                game.newGame(); assertEquals("", game.workBlockReason(job, WorkDuration.LONG));
+                game.newGame();
+                if(location==Location.FORGOTTEN_STOP){
+                    game.state().journal().select(VillageProject.WELL);game.state().journal().finish();
+                    game.state().journal().select(VillageProject.BRIDGE);game.state().journal().finish();
+                }
+                assertEquals("", game.workBlockReason(job, WorkDuration.LONG));
                 game.startWork(job, WorkDuration.LONG);
                 assertTrue(game.state().player().stamina() >= location.travelStaminaTo(Location.RED_CREEK));
             }

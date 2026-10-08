@@ -7,7 +7,7 @@ import com.badlogic.gdx.graphics.g2d.*;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.badlogic.gdx.scenes.scene2d.utils.*;
 
-/** Gegenereerde houtstijl en meegeleverd, glad gerenderd lettertype. */
+/** Papier, leren labels en meegeleverd, glad gerenderd lettertype. */
 public final class FrontierSkin {
     private FrontierSkin() {}
     public static Skin create() {
@@ -19,27 +19,27 @@ public final class FrontierSkin {
         skin.add("default-font", font);
         BitmapFont title = font("fonts/DejaVuSans-Bold.ttf", 32);
         skin.add("title-font", title);
-        Color cream = Color.valueOf("f5e4bf");
+        Color cream = Color.valueOf("382f25");
         skin.add("default", new Label.LabelStyle(font, cream));
-        skin.add("muted", new Label.LabelStyle(font, Color.valueOf("dbccb2")));
-        skin.add("accent", new Label.LabelStyle(font, Color.valueOf("e9b75f")));
-        skin.add("title", new Label.LabelStyle(title, Color.valueOf("e9b75f")));
-        Drawable up = panel(skin, "button", "55412d", "a17b46");
-        Drawable over = panel(skin, "hover", "705436", "e9b75f");
-        Drawable down = panel(skin, "pressed", "35291e", "e9b75f");
-        Drawable disabled = panel(skin, "disabled", "3d352c", "655848");
+        skin.add("muted", new Label.LabelStyle(font, Color.valueOf("70604b")));
+        skin.add("accent", new Label.LabelStyle(font, Color.valueOf("85522c")));
+        skin.add("title", new Label.LabelStyle(title, Color.valueOf("85522c")));
+        Drawable up = panel(skin, "button", "cab994", "8c7756");
+        Drawable over = panel(skin, "hover", "decba5", "85522c");
+        Drawable down = panel(skin, "pressed", "b3a07b", "85522c");
+        Drawable disabled = panel(skin, "disabled", "c2b69d", "a6987e");
         TextButton.TextButtonStyle button = new TextButton.TextButtonStyle(up, down, null, font);
         button.over = over; button.disabled = disabled;
         button.fontColor = cream; button.disabledFontColor = Color.valueOf("93836c");
         skin.add("default", button);
         TextButton.TextButtonStyle current = new TextButton.TextButtonStyle(button);
-        current.disabled = panel(skin, "current", "7c4a27", "f0c46e");
+        current.disabled = panel(skin, "current", "d4b778", "85522c");
         current.disabledFontColor = cream;
         skin.add("current", current);
         TextButton.TextButtonStyle selected = new TextButton.TextButtonStyle(button);
         selected.up = current.disabled;
         skin.add("selected", selected);
-        Texture wood = WoodTexture.create(1200, 800, "382418", null, true);
+        Texture wood = FieldTexture.create(600, 400, "d8c6a0", "8e7d5b", false);
         skin.add("wood-texture", wood);
         TextureRegionDrawable woodBackground = new TextureRegionDrawable(wood);
         woodBackground.setMinWidth(0); woodBackground.setMinHeight(0);
@@ -50,18 +50,18 @@ public final class FrontierSkin {
         scroll.hScroll = skin.newDrawable("pixel", Color.valueOf("251a12")); scroll.hScroll.setMinHeight(6);
         scroll.hScrollKnob = skin.newDrawable("pixel", Color.valueOf("ab8556")); scroll.hScrollKnob.setMinHeight(6);
         skin.add("default", scroll);
-        skin.add("card", panel(skin, "card-texture", "30271e", "655038"), Drawable.class);
+        skin.add("card", panel(skin, "card-texture", "e6d4aa", "a18b62"), Drawable.class);
         Window.WindowStyle window = new Window.WindowStyle(font, cream, skin.getDrawable("card"));
         window.stageBackground = skin.newDrawable("pixel", new Color(0, 0, 0, .65f));
         skin.add("default", window);
         ProgressBar.ProgressBarStyle stamina = new ProgressBar.ProgressBarStyle();
-        stamina.background = skin.newDrawable("pixel", Color.valueOf("181813"));
+        stamina.background = skin.newDrawable("pixel", Color.valueOf("c0b18b"));
         stamina.background.setMinHeight(10);
         stamina.knobBefore = skin.newDrawable("pixel", Color.valueOf("93a56a"));
         stamina.knobBefore.setMinHeight(10);
         skin.add("default-horizontal", stamina);
         ProgressBar.ProgressBarStyle xp = new ProgressBar.ProgressBarStyle(stamina);
-        xp.knobBefore = skin.newDrawable("pixel", Color.valueOf("b58b43")); xp.knobBefore.setMinHeight(18);
+        xp.knobBefore = skin.newDrawable("pixel", Color.valueOf("c9a26a")); xp.knobBefore.setMinHeight(18);
         xp.background.setMinHeight(18); stamina.knobBefore.setMinHeight(18);
         skin.add("experience-horizontal", xp);
         TextField.TextFieldStyle field = new TextField.TextFieldStyle();
@@ -69,6 +69,7 @@ public final class FrontierSkin {
         field.cursor = skin.newDrawable("pixel", cream); field.cursor.setMinWidth(2);
         field.selection = skin.newDrawable("pixel", Color.valueOf("705436")); skin.add("default", field);
         ItemIcons.install(skin);
+        JournalSketch.install(skin);
         return skin;
     }
     private static BitmapFont font(String path, int size) {
@@ -81,7 +82,7 @@ public final class FrontierSkin {
         } finally { generator.dispose(); }
     }
     private static Drawable panel(Skin skin, String name, String fill, String border) {
-        Texture texture = WoodTexture.create(256, 96, fill, border, false);
+        Texture texture = FieldTexture.create(256, 96, fill, border, !name.equals("card-texture"));
         skin.add(name, texture);
         NinePatchDrawable drawable = new NinePatchDrawable(new NinePatch(texture, 9, 9, 9, 9));
         drawable.setMinWidth(0); drawable.setMinHeight(0);

@@ -11,6 +11,9 @@ public final class JobManager {
     private final RandomGenerator random;
     private static final Map<Location, List<Job>> JOBS = Map.ofEntries(
         Map.entry(Location.RED_CREEK, List.of()),
+        Map.entry(Location.FORGOTTEN_STOP, List.of(
+            new Job("stop-clear",Location.FORGOTTEN_STOP,"Perron vrijmaken",14,2,18,60,18),
+            new Job("stop-records",Location.FORGOTTEN_STOP,"Oude registers doorzoeken",10,1,10,60,15))),
         Map.entry(Location.PINE_FOREST, List.of(
             new Job("wood", Location.PINE_FOREST, "Hout hakken", 15, 2, 25, 60, 20),
             new Job("branches", Location.PINE_FOREST, "Takken verzamelen", 9, 1, 12, 60, 10),

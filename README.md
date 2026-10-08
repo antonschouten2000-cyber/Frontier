@@ -1,6 +1,6 @@
 # Frontier
 
-Een klein westernspel voor één speler, rond 1880. Java 21, LibGDX 1.13.1, LWJGL3 en Scene2D. De Nederlandstalige interface heeft houten panelen, knoppen en een helder meegeleverd DejaVu Sans-lettertype. Bovenaan staan aparte kaarten voor geld, niveau, ervaring en energie. Ervaring en energie worden als voortgangsbalk weergegeven; de ervaringsbalk loopt van het begin van je huidige niveau tot het volgende niveau. De streekkaart bevat bos, bergen, bruggen, dorpshuizen, een mijnschacht, een ranch, vier werkende boerderijen, een steengroeve, handelspost, rivieroever en noorderwoud. De grotere buitengebieden bevatten extra bossen, zijrivieren, kronkelende paden en kleine boerenerven. Kaart en stadsillustratie worden lokaal gegenereerd. De lettertypen en hun licentie worden meegeleverd in `core/src/main/resources/fonts`; er zijn geen accounts nodig.
+Een klein westernspel voor één speler, rond 1880. Java 21, LibGDX 1.13.1, LWJGL3 en Scene2D. De Nederlandstalige interface gebruikt verweerd papier, leren labels, pentekeningen en een helder meegeleverd DejaVu Sans-lettertype. Hout hoort bij de gebouwen; menu’s lijken op een atlas en een reisdagboek. Bovenaan staan aparte kaarten voor geld, niveau, ervaring en energie. Ervaring en energie worden als voortgangsbalk weergegeven; de ervaringsbalk loopt van het begin van je huidige niveau tot het volgende niveau. De streekkaart bevat bos, bergen, bruggen, dorpshuizen, een mijnschacht, een ranch, vier werkende boerderijen, een steengroeve, handelspost, rivieroever en noorderwoud. De grotere buitengebieden bevatten extra bossen, zijrivieren, kronkelende paden en kleine boerenerven. Kaart en stadsillustratie worden lokaal gegenereerd. De lettertypen en hun licentie worden meegeleverd in `core/src/main/resources/fonts`; er zijn geen accounts nodig.
 
 ## Starten
 
@@ -24,7 +24,7 @@ Je begint als **Reiziger** in **Red Creek** met $20, 100 energie, niveau 1 en 0 
 - Elke afgeronde klus geeft geld en ervaring, met een kleine variatie in betaling. De waarden per klus zijn gebaseerd op één uur werk. Betaling en ervaring worden naar beneden afgerond met minimaal $1 en 1 ervaring; energie wordt naar boven afgerond met minimaal 1 punt.
 - Als je te moe bent, reis terug naar Red Creek. Open daar **Stad openen**, kies **Herberg** en klik op **8 uur slapen**: gratis, bij level 1 +8 uur en energie naar 100. Hogere herberglevels verkorten de slaaptijd.
 - Je behoudt altijd genoeg energie om terug te keren naar Red Creek. Werk en reizen die deze reserve zouden verbruiken zijn geblokkeerd.
-- De spelklok gaat alleen vooruit door reizen, afgerond werk of slapen. Tijdens het wachten op de echte werktimer blijft de spelklok staan. Een klus van 15 seconden voegt bij afronding precies 15 spel-seconden toe; de klok toont dan ook seconden.
+- De spelklok gaat vooruit door reizen, afgerond werk, slapen en het afronden van een dorpsproject. Tijdens het wachten op de echte werktimer blijft de spelklok staan. Een klus van 15 seconden voegt bij afronding precies 15 spel-seconden toe; de klok toont dan ook seconden.
 - XP blijft cumulatief. Level 2 begint bij 50 XP, level 3 bij 150, level 4 bij 300; elk volgend level vraagt 50 XP meer dan het vorige.
 
 | Locatie | Werkzaamheden |
@@ -118,23 +118,23 @@ Deze paden vallen onder `core/src/main/java/com/frontier/`.
 
 De uitvoerbare distributie staat in `lwjgl3/build/install/lwjgl3/`. Start `bin/lwjgl3` of `bin/lwjgl3.bat`; een JDK/JRE 21+ blijft nodig. Op macOS voeg je bij deze launcher `-XstartOnFirstThread` toe aan `JAVA_OPTS`.
 
-`./gradlew test` draait 159 tests voor de gameplay-loop, alle 42 werkzaamheden, energie, level-ups, klok, echte werktimers, beloningen op het eindtijdstip, hervatten na offline tijd, telegrammen, leesstatus, postvakopslag, gebouwupgrades, banktransacties, winkelontgrendelingen, materiaalverbruik, levelbonussen, vondstkansen, stapeling, opslagmigratie, JSON-roundtrips en ongeldige saves. Een aparte desktoptest opent een echt venster en klikt de Scene2D-knoppen:
+`./gradlew test` draait 159 tests voor de gameplay-loop, alle 44 werkzaamheden, energie, level-ups, klok, echte werktimers, beloningen op het eindtijdstip, hervatten na offline tijd, telegrammen, leesstatus, postvakopslag, gebouwupgrades, banktransacties, winkelontgrendelingen, materiaalverbruik, levelbonussen, vondstkansen, stapeling, opslagmigratie, JSON-roundtrips en ongeldige saves. Een aparte desktoptest opent een echt venster en klikt de Scene2D-knoppen:
 
 ```sh
 ./gradlew :lwjgl3:desktopSmoke
 ```
 
-Deze test gebruikt een tijdelijke save en verandert jouw eigen save niet. Hij controleert de uitgezoomde versleepbare kaart, de vier toekomstige aankoopplekken, statusbalken, stadsgebouwen, herberg, instellingen, alle 42 werkzaamheden, detailmenu’s, annuleren, uitputting, terugreis, slapen, vondsten, inventarisfilters, opslaan/laden, Nieuw spel, kleine en grote venstergroottes, meegroeiende kaartpanelen, gebouwlevels 1–5, winkeliconen, aankopen, stortingen/opnames en Afsluiten. Screenshots staan na de test in `build/frontier-desktop.png` en `build/frontier-desktop-small.png`, `build/frontier-work.png`, `build/frontier-inventory.png`, `build/frontier-town.png` en `build/frontier-active-work.png`. Telegrammen staan in `build/frontier-messages.png`. De nieuwe functies staan in `build/frontier-town-upgraded.png`, `build/frontier-shop-level-one.png`, `build/frontier-shop-level-five.png`, `build/frontier-tailor.png` en `build/frontier-bank.png`. Zonder desktop kan hij met Xvfb worden uitgevoerd, bijvoorbeeld `xvfb-run -a ./gradlew :lwjgl3:desktopSmoke`.
+Deze test gebruikt een tijdelijke save en verandert jouw eigen save niet. Hij controleert de uitgezoomde versleepbare kaart, de vier toekomstige aankoopplekken, statusbalken, stadsgebouwen, herberg, instellingen, alle 44 werkzaamheden, detailmenu’s, annuleren, uitputting, terugreis, slapen, vondsten, inventarisfilters, opslaan/laden, Nieuw spel, kleine en grote venstergroottes, meegroeiende kaartpanelen, gebouwlevels 1–5, winkeliconen, aankopen, stortingen/opnames en Afsluiten. Screenshots staan na de test in `build/frontier-desktop.png` en `build/frontier-desktop-small.png`, `build/frontier-work.png`, `build/frontier-inventory.png`, `build/frontier-town.png` en `build/frontier-active-work.png`. Telegrammen staan in `build/frontier-messages.png`. De nieuwe functies staan in `build/frontier-town-upgraded.png`, `build/frontier-shop-level-one.png`, `build/frontier-shop-level-five.png`, `build/frontier-tailor.png` en `build/frontier-bank.png`. Zonder desktop kan hij met Xvfb worden uitgevoerd, bijvoorbeeld `xvfb-run -a ./gradlew :lwjgl3:desktopSmoke`.
 
 ## Architectuur
 
 - `core/model`: `Player`, `GameTime`, `Location`, `Job`, `GameState`, `Item`, `Inventory`, `WorldMap`, `Landmark`, `WorkDuration`, `TimeRules`, `ActiveWork`, `Telegram`, `Mailbox`, `Building`, `TownState`, `ProgressionRules`.
-- `core/logic`: `GameSession` voert acties uit; `JobManager` bevat de 42 werkzaamheden en willekeurige betaling. `LootManager` bepaalt vondsten. `TownManager` controleert upgrades, aankopen en banktransacties; `WorkMaterials` bepaalt vaste materialen. Geen afhankelijkheid van UI. `GameSession` gebruikt een injecteerbare `Clock` voor de werktimers, zodat tests niet echt hoeven te wachten.
-- `core/save`: `SaveManager` valideert en bewaart versie-5 JSON met inventaris, werktimer, telegrammen, bank en gebouwen; versie-1 tot en met versie-4 saves worden ook geladen.
+- `core/logic`: `GameSession` voert acties uit; `JobManager` bevat de 44 werkzaamheden en willekeurige betaling. `LootManager` bepaalt vondsten. `TownManager` controleert upgrades, aankopen en banktransacties; `WorkMaterials` bepaalt vaste materialen. Geen afhankelijkheid van UI. `GameSession` gebruikt een injecteerbare `Clock` voor de werktimers, zodat tests niet echt hoeven te wachten.
+- `core/save`: `SaveManager` valideert en bewaart versie-7 JSON met inventaris, werktimer, telegrammen, bank, gebouwen, uitrusting, opdrachten, dorpsprojecten, ontdekkingen en reisdagboek. Versie-1 tot en met versie-6 saves worden ook geladen.
 - `core/ui`: `GameScreen`, `ActionBar`, `SettingsDialog`, `TownDialog`, `TownArtwork`, `ShopDialog`, `BankDialog`, `BuildingUpgradeDialog`, `ItemIcons`, `ItemTile`, `WorkDialog`, `InventoryDialog`, `MapPanel`, `FrontierSkin`, `WoodTexture`, `MapArtwork`, `WorldArtwork`, `LandmarkDialog`, `WorkProgress`, `MessagesDialog` verzorgen uitsluitend presentatie en bediening.
 - `lwjgl3`: desktoplauncher en desktop-smoketest.
 
-Deze versie bevat een versleepbare wereldkaart, 42 werkzaamheden met echte werktimers buiten de stad, een stadsvenster met vijf gebouwen, niveaus, slapen, vondsten, inventaris en opslag via instellingen.
+Deze versie bevat een versleepbare wereldkaart, 44 werkzaamheden met echte werktimers buiten de stad, een stadsvenster met zes gebouwen, niveaus, slapen, vondsten, inventaris en opslag via instellingen.
 
 ### Saloon en opdrachten
 
@@ -144,4 +144,20 @@ Open de stad in Red Creek, selecteer **Saloon** en kies **Opdrachtgevers**. Er z
 
 Klik in **Inventaris** op kleding en kies **Uitrusten** of **Uittrekken**. Hoofd, lichaam en voeten hebben elk één kledingplek. Kleding blijft in je inventaris. Laarzen besparen 10% reisenergie, een werkhemd 10% energie bij boerderijen en de ranch, een wollen jas 10% bij de mijn en steengroeve, een stofjas 12% bij alle werkzaamheden en een hoed 5% bij boswerk. Kosten worden naar boven afgerond; zeer korte klussen kunnen daardoor evenveel kosten. Reistijd en beloningen veranderen niet. De volledige terugweg blijft gereserveerd, zodat je ook na het uittrekken van laarzen thuis kunt komen. Kleding wisselen kan na een lopende klus.
 
-Saves gebruiken versie 6 en bewaren opdrachtvoortgang, opgehaalde beloningen en uitrusting. Oudere saves blijven ondersteund en krijgen een Saloon op level 1.
+Saves gebruiken versie 7 en bewaren opdrachtvoortgang, opgehaalde beloningen, uitrusting en het persoonlijke verhaal. Oudere saves blijven ondersteund en krijgen een Saloon op level 1.
+
+### Een thuis in Red Creek
+
+**Stad → Saloon → Opdrachtgevers → Dorpsprojecten** begint een klein verhaal. Martha probeert haar herberg weer gastvrij te maken; Elias wil voorkomen dat zijn gezin door droogte moet vertrekken. Jij kiest wie je eerst helpt. Eén project tegelijk: na die eerste belofte kun je het andere project ook uitvoeren. Je eerste keuze blijft bewaard. Materialen voor opdrachten, gebouwupgrades en dorpsprojecten komen uit dezelfde inventaris; kies waarvoor je ze gebruikt.
+
+| Project | Kosten | Zichtbaar resultaat en voordeel |
+| --- | --- | --- |
+| Martha’s veranda | $15, 12 hout, 4 steen | Veranda met banken bij de herberg; slapen kost 20% minder speltijd. |
+| Elias’ waterput | $15, 4 hout, 12 steen | Waterput en groene akkers op de Wilgenhoeve; werkzaamheden daar kosten 15% minder energie. |
+| Clara’s voetbrug | $25, 16 hout, 10 steen | Een voetbrug op de kaart; de Vergeten halte wordt bereikbaar. Eerst moet minstens één van de andere projecten klaar zijn. |
+
+Kies **Eerst helpen**, verzamel cash en materialen en kies daarna **Samen bouwen** in Red Creek. Bouwen kost twee speluren, zonder echte wachttijd. De kosten worden één keer afgeschreven. Verhaalvoordelen staan los van gebouwlevels; de waterputbonus stapelt met kleding. Alle energiekosten worden naar boven afgerond. De Vergeten halte heeft twee eigen werkzaamheden: het perron vrijmaken en oude registers doorzoeken. Reizen en werken bij de halte zijn vóór het brugherstel geblokkeerd.
+
+De knop **Reisdagboek** bewaart ontmoetingen, beloftes, bouwmomenten en ontdekkingen als gedateerde bladzijden met kleine pentekeningen. Dit is een apart venster naast de zakelijke telegrammen. Tijdens afgerond boswerk kun je een oude kaart ontdekken; in de mijn, steengroeve of ranch een brief; bij de Vergeten halte een verborgen kelder. Elke ontdekking is eenmalig. Kans per passende klus: 1% bij 15 seconden, 12% bij 10 minuten en 45% bij één uur. Ontdekkingen zijn verhaalfeiten en komen in het dagboek, niet als verkoopbare inventarisitems.
+
+De drie dorpsprojecten, je eerste keuze, het actieve project, de ontdekkingen en dagboekbladzijden blijven bewaard bij opslaan/laden en worden gewist bij Nieuw spel. Oudere saves beginnen dit hoofdstuk zonder voltooide projecten. In `core/model/VillageProject.java` staan verhalen, kosten en voordelen; `core/logic/StoryManager.java` voert de acties uit en bepaalt ontdekkingskansen. De desktoptest controleert dit hoofdstuk via echte Scene2D-knoppen; screenshots staan in `build/frontier-village-projects.png`, `build/frontier-story-town.png` en `build/frontier-travel-journal.png`.

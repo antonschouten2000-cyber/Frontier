@@ -47,6 +47,7 @@ final class WorkDialog extends Dialog {
         if (WorkMaterials.item(job) != null) row("Vast bouwmateriaal", WorkMaterials.quantity(job, selected) + " x " + WorkMaterials.item(job).displayName());
         row("Ervaring", "+" + job.xp(selected));
         row("Energie voor werk", game.workCost(job, selected) + " punten");
+        if (job.location()==Location.WILLOW_FARM && game.state().journal().done(VillageProject.WELL)) row("Dorpsvoordeel", "Waterput: 15% minder werkenergie");
         row("Duur van het werk", selected.displayName());
         int travel = game.state().location().travelMinutesTo(job.location());
         row("Reistijd erheen", travel == 0 ? "0 min (je bent hier)" : Ui.duration(travel));

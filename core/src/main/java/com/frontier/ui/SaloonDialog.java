@@ -16,6 +16,7 @@ final class SaloonDialog extends Dialog {
         setName("saloon-window"); getContentTable().pad(18);
         Label welcome=new Label("Aan de tafels van de Saloon zoeken inwoners hulp. Neem een opdracht aan en kom terug voor je beloning.",skin,"muted");
         welcome.setWrap(true); getContentTable().add(welcome).width(760).padBottom(12).row();
+        getContentTable().add(Ui.button(skin,"Dorpsprojecten - Martha, Elias en Clara","village-projects",()->new VillageProjectsDialog(skin,game,onAction).show(getStage()))).width(760).height(44).padBottom(12).row();
         getContentTable().add(cards).width(760).row();
         status=new Label("",skin,"accent"); status.setWrap(true); getContentTable().add(status).width(760).height(60).padTop(10).row();
         button("Sluiten"); Ui.nameDialogButtons(this,"saloon-close"); refresh();
