@@ -68,9 +68,14 @@ public final class DesktopSmoke extends Game {
                 click("building-TOWN_HALL"); click("upgrade-building");
                 check(((TextButton) stage().getRoot().findActor("upgrade-confirm")).isDisabled(), "Een upgrade zonder geld en materiaal is geblokkeerd.");
                 click("upgrade-cancel");
-                for (String building : new String[]{"GUNSMITH", "TOWN_HALL", "TAILOR", "BANK", "INN"}) click("building-" + building);
+                for (String building : new String[]{"GUNSMITH", "TOWN_HALL", "TAILOR", "BANK", "INN", "SALOON"}) click("building-" + building);
                 check(session.state().time().value().equals(townTime), "Gebouwen bekijken kost geen tijd.");
                 check(stage().getRoot().findActor("job-wood") == null, "Het stadsvenster biedt geen arbeid.");
+                click("building-SALOON"); click("saloon-open");
+                check(labelText(stage().getRoot()).contains("Herbergier Martha"), "De Saloon toont opdrachtgevers.");
+                click("mission-INN_WOOD");
+                check(session.state().missions().entry(Mission.INN_WOOD) != null, "Opdracht aannemen via de UI.");
+                capture("build/frontier-saloon.png"); click("saloon-close");
                 capture("build/frontier-town.png"); click("town-close");
                 check(labelText(stage().getRoot()).contains("1 april 1880"), "De datum is Nederlandstalig.");
                 // Lege inventaris en filters kosten geen tijd.
@@ -219,7 +224,7 @@ public final class DesktopSmoke extends Game {
         amount.setText("100000"); click("bank-deposit"); check(session.state().player().bankMoney() == 60, "Ongeldige storting verandert niets.");
         capture("build/frontier-bank.png"); click("bank-close");
         for (int target = 2; target <= Building.MAX_LEVEL; target++) {
-            for (Building building : new Building[]{Building.TOWN_HALL, Building.GUNSMITH, Building.TAILOR, Building.INN, Building.BANK}) {
+            for (Building building : new Building[]{Building.TOWN_HALL, Building.GUNSMITH, Building.TAILOR, Building.INN, Building.BANK, Building.SALOON}) {
                 click("building-" + building.name()); click("upgrade-building");
                 if (target == 2 && building == Building.TOWN_HALL) {
                     int before = session.state().player().money(); click("upgrade-cancel");
@@ -236,7 +241,12 @@ public final class DesktopSmoke extends Game {
         capture("build/frontier-tailor.png"); click("shop-close");
         click("building-INN"); var time = session.state().time().value(); click("sleep");
         check(session.state().time().value().equals(time.plusHours(2)), "Level 5 herberg herstelt energie in twee speluren.");
-        capture("build/frontier-town-upgraded.png"); click("town-close");
+        click("building-SALOON"); click("saloon-open"); click("mission-INN_WOOD");
+        check(session.state().missions().entry(Mission.INN_WOOD).claimed(), "Inleveren via de Saloon verbruikt hout en geeft beloning.");
+        click("saloon-close"); capture("build/frontier-town-upgraded.png"); click("town-close");
+        click("inventory"); click("inventory-CLOTHING"); click("item-BOOTS"); click("equip-item");
+        check(session.state().equipment().wearing(Item.BOOTS), "Kleding uitrusten via de inventaris.");
+        click("equip-item"); click("inventory-close");
         check(labelText(stage().getRoot().findActor("wallet-hud")).contains("Bank $60"), "De statusbalk toont cash en banksaldo.");
     }
     private void verifyTelegram() {

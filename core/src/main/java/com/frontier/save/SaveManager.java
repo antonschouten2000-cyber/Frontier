@@ -24,7 +24,14 @@ public final class SaveManager {
     public void save(GameState state) throws IOException {
         SaveData data = new SaveData();
         Player player = state.player();
-        data.version = 5;
+        data.version = 6;
+        data.equipment = new java.util.LinkedHashMap<>();
+        state.equipment().items().forEach((slot,item)->data.equipment.put(slot.name(),item.name()));
+        data.missions = new java.util.LinkedHashMap<>();
+        state.missions().entries().forEach((mission, entry) -> {
+            MissionData value = new MissionData(); value.progress=entry.progress(); value.claimed=entry.claimed();
+            data.missions.put(mission.name(), value);
+        });
         data.bankMoney = player.bankMoney();
         data.buildingLevels = new java.util.LinkedHashMap<>();
         state.town().levels().forEach((building, level) -> data.buildingLevels.put(building.name(), level));
@@ -77,7 +84,7 @@ public final class SaveManager {
                 if (!root.get(field).isString()) throw new IllegalArgumentException("Ongeldige tekst: " + field);
             }
             int version = root.getInt("version");
-            if (version < 1 || version > 5) throw new IllegalArgumentException("Deze opslagversie wordt niet ondersteund.");
+            if (version < 1 || version > 6) throw new IllegalArgumentException("Deze opslagversie wordt niet ondersteund.");
             Inventory inventory = new Inventory();
             if (version >= 2) {
                 JsonValue entries = root.get("inventory");
@@ -106,12 +113,36 @@ public final class SaveManager {
                     WorkDuration.valueOf(work.getString("duration")), work.getLong("startedAt"), work.getLong("endsAt")));
             }
             if (version >= 4) TelegramCodec.read(root, version, loaded.mailbox());
+            if (version >= 6) {
+                JsonValue gear = root.get("equipment");
+                if (gear == null || !gear.isObject()) throw new IllegalArgumentException("Uitrusting ontbreekt.");
+                java.util.Set<Equipment.Slot> slots = new java.util.HashSet<>();
+                for (JsonValue entry : gear) {
+                    Equipment.Slot slot=Equipment.Slot.valueOf(entry.name());
+                    if (!entry.isString() || !slots.add(slot)) throw new IllegalArgumentException("Ongeldige uitrusting.");
+                    Item item=Item.valueOf(entry.asString());
+                    if (Equipment.slot(item)!=slot) throw new IllegalArgumentException("Verkeerd lichaamsdeel.");
+                    loaded.equipment().equip(item,inventory);
+                }
+                JsonValue entries = root.get("missions");
+                if (entries == null || !entries.isObject()) throw new IllegalArgumentException("Opdrachten ontbreken.");
+                for (JsonValue entry : entries) {
+                    if (!entry.isObject() || !entry.has("progress") || !entry.get("progress").isLong()
+                        || entry.getLong("progress") < 0 || entry.getLong("progress") > Integer.MAX_VALUE
+                        || !entry.has("claimed") || !entry.get("claimed").isBoolean())
+                        throw new IllegalArgumentException("Ongeldige opdracht.");
+                    loaded.missions().restore(Mission.valueOf(entry.name()), entry.getInt("progress"), entry.getBoolean("claimed"));
+                }
+            }
             return loaded;
         } catch (RuntimeException e) {
             throw new IOException("Dit spel kan niet worden geladen: " + e.getMessage(), e);
         }
     }
+    public static final class MissionData { public int progress; public boolean claimed; }
     public static final class SaveData {
+        public java.util.Map<String, MissionData> missions;
+        public java.util.Map<String, String> equipment;
         public int version, money, bankMoney, level, xp, stamina;
         public String player, location, dateTime;
         public java.util.Map<String, Integer> inventory;

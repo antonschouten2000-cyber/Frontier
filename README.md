@@ -46,7 +46,7 @@ Je begint als **Reiziger** in **Red Creek** met $20, 100 energie, niveau 1 en 0 
 
 In Red Creek verschijnt **Stad openen**. Je moet daadwerkelijk in Red Creek zijn om naar binnen te gaan. Een apart venster toont **Geweermaker**, **Stadhuis**, **Kledingmaker**, **Herberg** en **Bank**, elk met een eigen level. Alle gebouwen beginnen op **level 1** en kunnen naar **level 5**. Klik op een gebouw en **Gebouw upgraden** voor de kosten en vereiste materialen. Bevestigen verbruikt direct cash en materialen; annuleren kost niets. In de stad zijn geen werkzaamheden.
 
-Het **stadhuis** bepaalt het maximale level van de andere gebouwen. Upgrade het stadhuis dus eerst. Voor een upgrade vanaf het huidige level `L` betaal je de basisprijs maal `L²`, plus `2 × L²` hout en `L²` steen. De geweermaker vraagt daarnaast `L` ijzererts; de kledingmaker `L` katoen. Basisprijzen: geweermaker $30, stadhuis $25, kledingmaker $20, herberg $25 en bank $20. Upgrades, winkelen en banktransacties kosten geen tijd of energie.
+Het **stadhuis** bepaalt het maximale level van de andere gebouwen. Upgrade het stadhuis dus eerst. Voor een upgrade vanaf het huidige level `L` betaal je de basisprijs maal `L²`, plus `2 × L²` hout en `L²` steen. De geweermaker vraagt daarnaast `L` ijzererts; de kledingmaker `L` katoen. Basisprijzen: geweermaker $30, stadhuis $25, kledingmaker $20, herberg $25, bank $20 en Saloon $20. Upgrades, winkelen en banktransacties kosten geen tijd of energie.
 
 | Gebouw | Functie per level |
 | --- | --- |
@@ -56,7 +56,7 @@ Het **stadhuis** bepaalt het maximale level van de andere gebouwen. Upgrade het 
 | Herberg | Volledig herstellen in 8 → 6 → 4 → 3 → 2 speluren |
 | Bank | Rekeninglimiet $500 → $2.000 → $4.500 → $8.000 → $12.500 |
 
-**Winkel openen** toont voorwerpen met iconen, prijs, kwaliteit en benodigd gebouwlevel. Oudere artikelen blijven beschikbaar na een upgrade. Aankopen gaan naar de inventaris en worden betaald met cash. De kwaliteitswaarde geeft de rang van het voorwerp aan; combat, uitrusten en kledingbonussen zijn nog niet toegevoegd.
+**Winkel openen** toont voorwerpen met iconen, prijs, kwaliteit en benodigd gebouwlevel. Oudere artikelen blijven beschikbaar na een upgrade. Aankopen gaan naar de inventaris en worden betaald met cash. De kwaliteitswaarde geeft de rang van het voorwerp aan; combat is nog niet toegevoegd.
 
 Bij de bank opent **Rekening beheren** een venster met cash en banksaldo. Vul een bedrag in en kies **Storten** of **Opnemen**. Je kunt geen negatief bedrag storten, meer cash uitgeven dan je hebt of meer opnemen dan je rekening bevat. Storten boven de rekeninglimiet is geblokkeerd. Upgrades en aankopen gebruiken cash; neem daarvoor zo nodig eerst geld op. Cash en rekening zijn ook zichtbaar in de bovenste statusbalk.
 
@@ -68,7 +68,7 @@ Passende klussen leveren gegarandeerd bouwmateriaal op: **hout** bij boswerk, **
 
 Een klus van één uur heeft **30% kans** op één voorwerp. Bij 10 minuten is dit **5%**, bij 15 seconden **0,125%**. Bij een vondst is 60% een product, 30% kleding en 10% een wapen. Producten passen bij de locatie: brandhout uit het bos, ijzererts uit de mijn en koffiebonen bij de ranch. Er zijn ook hoeden, laarzen, jassen, oude revolvers, jachtgeweren en zakmessen.
 
-De knop **Inventaris** toont klikbare voorwerpslots met herkenbare iconen, namen en gestapelde aantallen en filters voor **Alles**, **Wapens**, **Producten** en **Kleding**. Klik op een voorwerp voor de beschrijving. De inventaris begint leeg en gaat mee in je save. Het bekijken van menu's kost geen tijd of energie. Hout, bouwsteen, ijzererts en katoen worden bij gebouwupgrades verbruikt. Wapens en kleding kunnen worden gekocht en verzameld; uitrusten en verkopen volgen later.
+De knop **Inventaris** toont klikbare voorwerpslots met herkenbare iconen, namen en gestapelde aantallen en filters voor **Alles**, **Wapens**, **Producten** en **Kleding**. Klik op een voorwerp voor de beschrijving. De inventaris begint leeg en gaat mee in je save. Het bekijken van menu's kost geen tijd of energie. Hout, bouwsteen, ijzererts en katoen worden bij gebouwupgrades verbruikt. Wapens kunnen worden gekocht en verzameld; combat en verkopen volgen later. Kleding kan worden uitgerust.
 
 Reizen gaat rechtstreeks tussen locaties. Afstand bepaalt de energiekosten; iedere energie-eenheid staat voor 8 minuten reistijd.
 
@@ -135,3 +135,13 @@ Deze test gebruikt een tijdelijke save en verandert jouw eigen save niet. Hij co
 - `lwjgl3`: desktoplauncher en desktop-smoketest.
 
 Deze versie bevat een versleepbare wereldkaart, 42 werkzaamheden met echte werktimers buiten de stad, een stadsvenster met vijf gebouwen, niveaus, slapen, vondsten, inventaris en opslag via instellingen.
+
+### Saloon en opdrachten
+
+Open de stad in Red Creek, selecteer **Saloon** en kies **Opdrachtgevers**. Er zijn drie eenmalige opdrachten: Martha vraagt 10 brandhout ($25, 30 XP, hoed), Elias vraagt drie afgeronde klussen bij Willow Farm ($30, 40 XP, werkhemd) en Clara vraagt 10 bouwsteen ($35, 50 XP, laarzen). Elke opdracht is vanaf het begin beschikbaar. Neem een opdracht eerst aan. Alleen daarna afgeronde boerderijklussen tellen; gevonden materialen die je al hebt mag je wel inleveren. Je kunt alle opdrachten tegelijk aannemen. Kom terug naar de Saloon om materialen in te leveren en je beloning op te halen. Voltooide opdrachten geven een telegram; beloningen kunnen niet opnieuw worden opgehaald.
+
+### Kleding uitrusten
+
+Klik in **Inventaris** op kleding en kies **Uitrusten** of **Uittrekken**. Hoofd, lichaam en voeten hebben elk één kledingplek. Kleding blijft in je inventaris. Laarzen besparen 10% reisenergie, een werkhemd 10% energie bij boerderijen en de ranch, een wollen jas 10% bij de mijn en steengroeve, een stofjas 12% bij alle werkzaamheden en een hoed 5% bij boswerk. Kosten worden naar boven afgerond; zeer korte klussen kunnen daardoor evenveel kosten. Reistijd en beloningen veranderen niet. De volledige terugweg blijft gereserveerd, zodat je ook na het uittrekken van laarzen thuis kunt komen. Kleding wisselen kan na een lopende klus.
+
+Saves gebruiken versie 6 en bewaren opdrachtvoortgang, opgehaalde beloningen en uitrusting. Oudere saves blijven ondersteund en krijgen een Saloon op level 1.

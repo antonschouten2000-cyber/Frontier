@@ -9,6 +9,10 @@ public final class GameState {
     private final Inventory inventory;
     private ActiveWork activeWork;
     private TownState town = new TownState();
+    private final Equipment equipment = new Equipment();
+    public Equipment equipment() { return equipment; }
+    private final MissionJournal missions = new MissionJournal();
+    public MissionJournal missions() { return missions; }
     private final Mailbox mailbox = new Mailbox();
     public GameState() { this(new Player(), new GameTime(), Location.RED_CREEK); }
     public GameState(Player player, GameTime time, Location location) {

@@ -46,11 +46,11 @@ final class WorkDialog extends Dialog {
         row("Opbrengst", "$" + job.scaledPay(job.basePay() - job.payVariation(), selected) + " tot $" + job.scaledPay(job.basePay() + job.payVariation(), selected));
         if (WorkMaterials.item(job) != null) row("Vast bouwmateriaal", WorkMaterials.quantity(job, selected) + " x " + WorkMaterials.item(job).displayName());
         row("Ervaring", "+" + job.xp(selected));
-        row("Energie voor werk", job.staminaCost(selected) + " punten");
+        row("Energie voor werk", game.workCost(job, selected) + " punten");
         row("Duur van het werk", selected.displayName());
         int travel = game.state().location().travelMinutesTo(job.location());
         row("Reistijd erheen", travel == 0 ? "0 min (je bent hier)" : Ui.duration(travel));
-        row("Energie voor de reis", game.state().location().travelStaminaTo(job.location()) + " punten");
+        row("Energie voor de reis", game.travelCost(job.location()) + " punten");
         row("Kans op een vondst", String.format(Locale.forLanguageTag("nl-NL"), "%.3f%%", LootManager.chancePercent(selected)));
         String reason = game.workBlockReason(job, selected);
         note.setText(reason.isEmpty() ? "De voortgangsbalk blijft zichtbaar na het sluiten van dit venster. Reizen kost alleen in-game tijd." : reason);

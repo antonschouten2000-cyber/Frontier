@@ -12,7 +12,7 @@ final class TownDialog extends Dialog {
     private final GameSession game;
     private final Consumer<String> onAction;
     private final Label description, summary, requirements;
-    private final TextButton sleep, shop, bank, upgrade;
+    private final TextButton sleep, shop, bank, upgrade, saloon;
     private final EnumMap<Building, TextButton> signs = new EnumMap<>(Building.class);
     private Building selected = Building.TOWN_HALL;
     TownDialog(Skin skin, GameSession game, Consumer<String> onAction) {
@@ -22,7 +22,7 @@ final class TownDialog extends Dialog {
         contents.add(new Label("RED CREEK", skin, "title")).left().padBottom(8).row();
         contents.add(new Label("Kies een gebouw om te winkelen, te upgraden of uit te rusten.", skin, "muted")).left().padBottom(10).row();
         Stack street = new Stack(); street.add(new Image(skin.get("town-art", Texture.class)));
-        Table buttons = new Table(); buttons.bottom().padBottom(20); buttons.defaults().width(174).height(50).pad(6);
+        Table buttons = new Table(); buttons.bottom().padBottom(20); buttons.defaults().width(146).height(50).pad(6);
         for (Building building : Building.values()) {
             TextButton sign = Ui.button(skin, building.displayName(), "building-" + building.name(), () -> { selected = building; refresh(); });
             signs.put(building, sign); buttons.add(sign);
@@ -36,8 +36,9 @@ final class TownDialog extends Dialog {
         shop = Ui.button(skin, "Winkel openen", "shop-open", () -> new ShopDialog(skin, game, selected, this::action).show(getStage()));
         bank = Ui.button(skin, "Rekening beheren", "bank-open", () -> new BankDialog(skin, game, this::action).show(getStage()));
         upgrade = Ui.button(skin, "Gebouw upgraden", "upgrade-building", () -> new BuildingUpgradeDialog(skin, game, selected, this::action).show(getStage()));
-        Table controls = new Table(); controls.defaults().width(218).height(42).padRight(12);
-        controls.add(upgrade); controls.add(shop); controls.add(bank); controls.add(sleep);
+        saloon = Ui.button(skin, "Opdrachtgevers", "saloon-open", () -> new SaloonDialog(skin, game, this::action).show(getStage()));
+        Table controls = new Table(); controls.defaults().width(174).height(42).padRight(12);
+        controls.add(upgrade); controls.add(shop); controls.add(bank); controls.add(sleep); controls.add(saloon);
         contents.add(controls).left().padTop(8).row();
         summary = new Label("", skin, "muted"); summary.setName("town-summary");
         contents.add(summary).left().padTop(12).row();
@@ -60,6 +61,7 @@ final class TownDialog extends Dialog {
         }
         upgrade.setDisabled(level == Building.MAX_LEVEL);
         shop.setVisible(selected == Building.GUNSMITH || selected == Building.TAILOR);
+        saloon.setVisible(selected == Building.SALOON);
         bank.setVisible(selected == Building.BANK); sleep.setVisible(selected == Building.INN);
         sleep.setText(Ui.duration(game.state().town().sleepMinutes()) + " slapen");
         sleep.setDisabled(game.state().location() != Location.RED_CREEK || game.isWorking());

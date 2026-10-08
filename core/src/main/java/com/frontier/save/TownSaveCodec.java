@@ -23,6 +23,7 @@ final class TownSaveCodec {
                 throw new IllegalArgumentException("Ongeldig gebouwlevel.");
             levels.put(building, entry.asInt());
         }
+        if (root.getInt("version") == 5) levels.putIfAbsent(Building.SALOON, 1);
         return new TownState(levels);
     }
 }

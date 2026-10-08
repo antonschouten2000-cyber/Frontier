@@ -5,11 +5,13 @@ import java.util.Random;
 
 /** Aparte straatillustratie, zonder werkzaamheden of gedeelde wereldkaart. */
 final class TownArtwork {
-    static final int WIDTH = 960, HEIGHT = 350;
+    static final int WIDTH = 1150, HEIGHT = 350;
     private final Pixmap p = new Pixmap(WIDTH, HEIGHT, Pixmap.Format.RGBA8888);
     private TownArtwork() {}
     static Texture create() {
-        TownArtwork art = new TownArtwork(); art.paint(); Texture t = new Texture(art.p); art.p.dispose(); return t;
+        TownArtwork art = new TownArtwork(); art.paint(); Pixmap scaled = new Pixmap(960, HEIGHT, Pixmap.Format.RGBA8888);
+        scaled.drawPixmap(art.p, 0, 0, WIDTH, HEIGHT, 0, 0, 960, HEIGHT);
+        Texture t = new Texture(scaled); scaled.dispose(); art.p.dispose(); return t;
     }
     private void color(String hex) { p.setColor(Color.valueOf(hex)); }
     private void paint() {
@@ -20,10 +22,10 @@ final class TownArtwork {
         color("bea274"); p.fillRectangle(0, 121, WIDTH, HEIGHT - 121);
         color("d3b985"); p.fillRectangle(0, 245, WIDTH, 64);
         Random random = new Random(1880);
-        for (int i = 0; i < 5000; i++) {
+        for (int i = 0; i < 6000; i++) {
             color(i % 2 == 0 ? "b29769" : "d6bd8d"); p.drawPixel(random.nextInt(WIDTH), 130 + random.nextInt(220));
         }
-        for (int i = 0; i < 5; i++) building(26 + i * 187, i);
+        for (int i = 0; i < 6; i++) building(26 + i * 187, i);
         // Dorpsstraat, houten trottoir en karrensporen.
         color("9d7f54"); p.fillRectangle(0, 298, WIDTH, 5);
         color("ad8f61"); p.drawLine(0, 323, WIDTH, 323); p.drawLine(0, 330, WIDTH, 330);
@@ -54,6 +56,10 @@ final class TownArtwork {
             color("40382d"); p.fillCircle(x + 79, y - 43, 8);
             color("cabb94"); p.drawLine(x + 79, y - 43, x + 79, y - 49); p.drawLine(x + 79, y - 43, x + 84, y - 43);
             color("e0d0a5"); p.fillRectangle(x + 8, y + 33, 9, 79); p.fillRectangle(x + 142, y + 33, 9, 79);
+        }
+        if (index == 5) {
+            color("bf8b50"); p.fillRectangle(x + 65, y + 72, 14, 22); p.fillRectangle(x + 81, y + 72, 14, 22);
+            color("765332"); p.fillRectangle(x + 14, y + 94, 22, 18);
         }
         color("81603f"); p.fillRectangle(x - 5, y + height, width + 10, 7);
         color("a28659"); p.fillRectangle(x + 47, y + height + 7, 65, 5);

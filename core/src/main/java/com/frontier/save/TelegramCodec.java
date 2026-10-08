@@ -12,7 +12,7 @@ final class TelegramCodec {
             Data data = new Data(); data.jobName = message.jobName(); data.location = message.location().name();
             data.durationSeconds = message.durationSeconds(); data.money = message.money(); data.xp = message.xp();
             data.found = message.found() == null ? null : message.found().name(); data.dateTime = message.dateTime().toString();
-            data.read = message.read(); data.material = message.material() == null ? null : message.material().name();
+            data.mission = message.mission(); data.read = message.read(); data.material = message.material() == null ? null : message.material().name();
             data.materialQuantity = message.materialQuantity(); data.levelBonus = message.levelBonus(); return data;
         }).toArray(Data[]::new);
     }
@@ -32,7 +32,11 @@ final class TelegramCodec {
         int quantity = version >= 5 ? number(entry, "materialQuantity") : 0;
         int bonus = version >= 5 ? number(entry, "levelBonus") : 0;
         return new Telegram(entry.getString("jobName"), Location.valueOf(entry.getString("location")), duration, money, xp, found,
-            LocalDateTime.parse(entry.getString("dateTime")), entry.getBoolean("read"), material, quantity, bonus);
+            LocalDateTime.parse(entry.getString("dateTime")), entry.getBoolean("read"), material, quantity, bonus, version >= 6 && mission(entry));
+    }
+    private static boolean mission(JsonValue entry) {
+        if (!entry.has("mission") || !entry.get("mission").isBoolean()) throw new IllegalArgumentException("Ongeldig telegramtype.");
+        return entry.getBoolean("mission");
     }
     private static int number(JsonValue entry, String field) {
         JsonValue value = entry.get(field);
@@ -48,6 +52,6 @@ final class TelegramCodec {
     public static final class Data {
         public String jobName, location, found, dateTime, material;
         public int durationSeconds, money, xp, materialQuantity, levelBonus;
-        public boolean read;
+        public boolean read, mission;
     }
 }

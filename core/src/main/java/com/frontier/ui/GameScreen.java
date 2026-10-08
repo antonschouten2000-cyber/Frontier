@@ -29,7 +29,7 @@ public final class GameScreen extends ScreenAdapter {
         this.game = game; this.saves = saves;
         travel = button("Reizen", "travel", this::confirmTravel);
         town = button("Stad openen", "town", () -> new TownDialog(skin, game, this::message).show(stage));
-        inventory = button("Inventaris", "inventory", () -> new InventoryDialog(skin, game.state().inventory()).show(stage));
+        inventory = button("Inventaris", "inventory", () -> new InventoryDialog(skin, game, this::message).show(stage));
         messages = button("Berichten", "messages", () -> new MessagesDialog(skin, game.state().mailbox(), this::refresh).show(stage));
         map = new MapPanel(skin, location -> { selected = location; refresh(); },
             site -> new LandmarkDialog(skin, site).show(stage));
@@ -78,7 +78,7 @@ public final class GameScreen extends ScreenAdapter {
         };
         String reason = game.travelBlockReason(target);
         dialog.text("Reistijd: " + Ui.duration(game.state().location().travelMinutesTo(target))
-            + "\nEnergie: " + game.state().location().travelStaminaTo(target) + " punten"
+            + "\nEnergie: " + game.travelCost(target) + " punten"
             + (reason.isEmpty() ? "\nJe houdt genoeg energie over voor de terugweg." : "\n" + reason));
         dialog.getContentTable().pad(24);
         dialog.button("Terug", false); dialog.button("Op pad", true);

@@ -45,12 +45,12 @@ final class MessagesDialog extends Dialog {
         Telegram message = mailbox.read(index);
         int seconds = message.durationSeconds();
         String duration = seconds < 60 ? seconds + " seconden" : Ui.duration(seconds / 60);
-        details.setText("TELEGRAM - WERK AFGEROND\n"
+        details.setText((message.mission() ? "TELEGRAM - OPDRACHT VOLTOOID\n" : "TELEGRAM - WERK AFGEROND\n")
             + message.jobName() + " bij " + message.location().displayName() + "\n"
             + new GameTime(message.dateTime()).display() + "\n\n"
-            + "Werktijd: " + duration + "\n"
+            + (message.mission() ? "" : "Werktijd: " + duration + "\n")
             + "Opbrengst: $" + message.money() + "  |  Ervaring: +" + message.xp() + "\n"
-            + "Gevonden: " + (message.found() == null ? "Geen voorwerpen." : "1 x " + message.found().displayName())
+            + (message.mission() ? "Beloningsvoorwerp: " : "Gevonden: ") + (message.found() == null ? "Geen voorwerpen." : "1 x " + message.found().displayName())
             + (message.material() == null ? "" : "\nBouwmateriaal: " + message.materialQuantity() + " x " + message.material().displayName())
             + (message.levelBonus() == 0 ? "" : "\nWaarvan levelbonus: $" + message.levelBonus()));
         refresh(); onRead.run();
